@@ -1,0 +1,5 @@
+.venv/
+data/tiles/
+outputs/*/snapshots/
+__pycache__/
+*.pyc
