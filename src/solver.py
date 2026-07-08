@@ -286,16 +286,15 @@ class Simulation:
         (self.out_dir / "snapshots").mkdir(parents=True, exist_ok=True)
 
         # sources/sinks configured by the scenario
-        self.injections = []   # list of dicts: rows, cols, t, q, started
-        self.res_cells = None  # reservoir cells drained to mirror injection
-        self.sink_cells = None
-        self.sink_series = []  # (t, inflow_m3) per step, for Idukki reporting
+        self.injections = []   # list of dicts: rows, cols, t, q, drain cells
         self.gauges = {}       # name -> (row, col)
-        # cascade hook: fires once when cumulative sink inflow crosses the
-        # trigger volume (1 Mm3 default - enough surge to plausibly overtop)
-        self.on_sink_arrival = None
-        self.sink_trigger_vol = 1e6
-        self._sink_cb_fired = False
+        # monitored basin (Idukki): the pool rises physically behind the
+        # sealed rim (spillway assumed CLOSED - no releases); we track its
+        # net volume gain and fire the cascade hook when the surge arrives
+        self.basin_cells = None
+        self.on_basin_arrival = None
+        self.basin_trigger_vol = 1e6
+        self._basin_cb_fired = False
 
         # mass ledger [m3]
         self.led = dict(initial=0.0, injected=0.0, drained=0.0, sink=0.0,
@@ -306,17 +305,19 @@ class Simulation:
         self.h[:] = depth
         self.led["initial"] = float(depth.sum()) * self.cell_area
 
-    def add_injection(self, rows, cols, t, q, drain_reservoir=False):
+    def add_injection(self, rows, cols, t, q, drain_cells=None):
+        """Inject hydrograph q(t) at cells; optionally draw the same volume
+        down from `drain_cells` (the upstream pool) for visual/mass
+        consistency - the hydrograph remains authoritative if they run dry.
+        """
         self.injections.append(dict(
             rows=np.asarray(rows), cols=np.asarray(cols),
             t=np.asarray(t, float), q=np.asarray(q, float),
-            drain=drain_reservoir, active=True))
+            drain=(np.asarray(drain_cells[0]), np.asarray(drain_cells[1]))
+            if drain_cells is not None else None))
 
-    def set_reservoir_cells(self, rows, cols):
-        self.res_cells = (np.asarray(rows), np.asarray(cols))
-
-    def set_sink(self, rows, cols):
-        self.sink_cells = (np.asarray(rows), np.asarray(cols))
+    def set_basin(self, rows, cols):
+        self.basin_cells = (np.asarray(rows), np.asarray(cols))
 
     # -------------------------------------------------- helpers
     def _window_from_wet(self):
@@ -358,6 +359,13 @@ class Simulation:
         sink_bins = np.zeros(n_bins, np.float64)  # m3 per gauge_dt bin
         snap_times = []
         sink_hit_t = None
+        # basin gain is measured against the initial pool (nominal slab)
+        basin_vol0 = 0.0
+        if self.basin_cells is not None:
+            rr, cc = self.basin_cells
+            basin_vol0 = float(self.h[rr, cc].sum()) * self.cell_area
+        basin_prev = basin_vol0
+        basin_peak = 0.0
         wall0 = time.time()
 
         win = self._window_from_wet()
@@ -375,10 +383,8 @@ class Simulation:
                                  i0, i1, j0, j1, self.dx, dt)
             self.led["clipped"] += clip
 
-            # breach inflow (and matched reservoir drawdown for realism)
+            # breach inflow (and matched upstream-pool drawdown)
             for inj in self.injections:
-                if not inj["active"]:
-                    continue
                 q = np.interp(t, inj["t"], inj["q"], left=0.0, right=0.0)
                 if q <= 0.0:
                     continue
@@ -386,8 +392,8 @@ class Simulation:
                 self.h[inj["rows"], inj["cols"]] += vol / (
                     self.cell_area * len(inj["rows"]))
                 self.led["injected"] += vol
-                if inj["drain"] and self.res_cells is not None:
-                    rr, cc = self.res_cells
+                if inj["drain"] is not None:
+                    rr, cc = inj["drain"]
                     hr = self.h[rr, cc]
                     wet = hr > 0.0
                     nwet = int(wet.sum())
@@ -397,26 +403,26 @@ class Simulation:
                         self.h[rr, cc] = hr - removed
                         self.led["drained"] += float(removed.sum()) * \
                             self.cell_area
-                        # zero momentum of drained cells (still water anyway)
 
-            # Idukki sink: swallow anything that lands on the mask
-            if self.sink_cells is not None:
-                rr, cc = self.sink_cells
-                hs = self.h[rr, cc]
-                vol = float(hs.sum()) * self.cell_area
-                if vol > 0.0:
-                    self.h[rr, cc] = 0.0
-                    self.hu[rr, cc] = 0.0
-                    self.hv[rr, cc] = 0.0
-                    self.led["sink"] += vol
+            # Idukki basin monitor: the pool rises physically (rim sealed,
+            # spillway closed); track net volume gain for reporting and
+            # fire the cascade hook when the surge has clearly arrived
+            if self.basin_cells is not None:
+                rr, cc = self.basin_cells
+                vol = float(self.h[rr, cc].sum()) * self.cell_area
+                gain_step = vol - basin_prev
+                basin_prev = vol
+                if gain_step > 0.0:
                     b = min(int(t / gauge_dt), n_bins - 1)
-                    sink_bins[b] += vol
-                    if sink_hit_t is None and self.led["sink"] >= 1e3:
-                        sink_hit_t = t
-                    if (self.on_sink_arrival and not self._sink_cb_fired
-                            and self.led["sink"] >= self.sink_trigger_vol):
-                        self._sink_cb_fired = True
-                        self.on_sink_arrival(t)
+                    sink_bins[b] += gain_step
+                gain = vol - basin_vol0
+                basin_peak = max(basin_peak, gain)
+                if sink_hit_t is None and gain >= 1e4:
+                    sink_hit_t = t
+                if (self.on_basin_arrival and not self._basin_cb_fired
+                        and gain >= self.basin_trigger_vol):
+                    self._basin_cb_fired = True
+                    self.on_basin_arrival(t)
 
             # open boundaries: 2-cell strips on all four edges swallow
             # outflow (kernel never updates the outermost cells, so keeping
@@ -476,7 +482,7 @@ class Simulation:
             ledger={k: v for k, v in self.led.items()},
             ledger_error=err,
             storage_final=self.storage(),
-            sink_total=self.led["sink"],
+            sink_total=basin_peak,   # peak volume impounded in the basin
             sink_first_arrival_s=sink_hit_t,
             snap_times=snap_times,
             gauge_names=gauge_names,

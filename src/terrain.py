@@ -32,6 +32,7 @@ IDUKKI_SEEDS = [(9.838, 76.980), (9.820, 76.940), (9.780, 77.040),
                 (9.800, 76.990), (9.760, 77.080), (9.830, 77.060)]
 IDUKKI_MAX_WSE = 736.0                     # FRL 732.6 m + margin
 IDUKKI_SURFACE = (690.0, 736.0)            # plausible DSM lake-surface range
+LAKE_SLAB = 5.0                            # nominal initial lake depth [m]
 
 
 @dataclass
@@ -150,12 +151,23 @@ def build_domain(dem_path, target_volume_m3):
         z[disc] = np.maximum(z[disc], crest_m)
         return disc
 
+    def plug_rect(box, crest_m):
+        """Solid rectangular wall block. Disc plugs and rim rings kept
+        leaking through the DSM's smoothed crests/spillway notches; a
+        solid block spanning the whole dam site cannot have gaps."""
+        rsl_, csl_ = _box_slices(transform_, crs, box, z.shape)
+        blk = np.zeros(z.shape, bool)
+        blk[rsl_, csl_] = z[rsl_, csl_] < crest_m
+        z[rsl_, csl_] = np.maximum(z[rsl_, csl_], crest_m)
+        return blk
+
     # ---- dam walls
     dam_rc = dom.ll_to_rc(*DAM_MULLA)
     wall = plug(DAM_MULLA, 400.0, 930.0)
-    idukki_plugs = (plug(DAM_IDUKKI_ARCH, 350.0, 745.0)
-                    | plug(DAM_CHERUTHONI, 350.0, 745.0)
-                    | plug(DAM_KULAMAVU, 350.0, 745.0))
+    # Idukki arch + Cheruthoni + the NE corridor exit, as one block along
+    # the dam line; Kulamavu saddle as another. Crest 742 m (~dam crests).
+    idukki_plugs = (plug_rect((9.8405, 9.8555, 76.9410, 77.0280), 742.0)
+                    | plug_rect((9.7960, 9.8125, 76.8760, 76.9000), 742.0))
 
     # ---- reservoir: bisect WSE until the connected fill matches volume
     rsl, csl = _box_slices(transform_, crs, RES_BOX, z.shape)
@@ -229,19 +241,53 @@ def build_domain(dem_path, target_volume_m3):
     sinkmask &= (z >= 695.0) & (z <= IDUKKI_MAX_WSE)
     r_northlimit, _ = dom.ll_to_rc(9.848, 76.977)
     sinkmask[:r_northlimit, :] = False
+
+    # ---- verify the basin is watertight: fill from the lake at just
+    # below block crest; the fill must stay inside the reservoir's
+    # geographic footprint (it may run up the inflow arms - legitimate
+    # backwater - but never north past the dams or west past Kulamavu)
+    wide = _box_slices(transform_, crs, (9.60, 10.00, 76.80, 77.25),
+                       z.shape)
+    vseed = None
+    for lat, lon in IDUKKI_SEEDS:
+        rc_ = dom.ll_to_rc(lat, lon)
+        if IDUKKI_SURFACE[0] <= z[rc_] <= IDUKKI_SURFACE[1]:
+            vseed = rc_
+            break
+    got = _connected_below(z, 741.5, vseed, *wide)
+    la0, lo0 = dom.rc_to_ll(int(got[0].min()), int(got[1].min()))
+    la1, lo1 = dom.rc_to_ll(int(got[0].max()), int(got[1].max()))
+    print(f"idukki basin verify: fill extent lat {la1:.3f}..{la0:.3f} "
+          f"lon {lo0:.3f}..{lo1:.3f}")
+    if la0 > 9.87 or lo0 < 76.85:
+        raise RuntimeError("Idukki basin leaks past the dam blocks")
     dom.sink_rows, dom.sink_cols = np.nonzero(sinkmask)
     area = len(dom.sink_rows) * dx * dx / 1e6
     print(f"idukki sink: {used} seeds, {len(dom.sink_rows)} cells, "
           f"{area:.0f} km2")
+    # nominal FLAT pool on the lake (surface = 725 m datum + LAKE_SLAB)
+    # so an arriving surge levels out at gravity-wave speed instead of
+    # crawling over a dry flat; the real bathymetry below the DSM water
+    # surface is unknowable anyway. A flat surface is hydrostatically
+    # consistent (well-balanced scheme keeps it exactly at rest); a
+    # uniform-depth blanket over the sloping shoreline would avalanche.
+    pool_wse = 725.0 + LAKE_SLAB
+    lake_depth = np.maximum(pool_wse - z[dom.sink_rows, dom.sink_cols], 0.0)
+    depth0[dom.sink_rows, dom.sink_cols] = lake_depth
+    print(f"idukki initial pool: surface {pool_wse:.0f} m ASL, "
+          f"{float(lake_depth.sum())*dx*dx/1e6:.0f} Mm3 nominal slab")
     if not (15.0 <= area <= 120.0):
         print(f"WARNING: Idukki sink area {area:.0f} km2 implausible "
               f"(FRL area ~60 km2)")
 
     # ---- Cheruthoni cascade injection: the gorge runs NORTH of the dams
-    # (the lake sits on the south side; verified against the DSM)
+    # (the lake sits on the south side; verified against the DSM). The
+    # annulus starts beyond the rim shell so the hydrograph lands in the
+    # open gorge, not on the sealed rim.
     cheru_rc = dom.ll_to_rc(*DAM_CHERUTHONI)
     dom.cheru_rows, dom.cheru_cols = _annulus_lowest(
-        z, cheru_rc, dx, 300.0, 1200.0, bearing_deg=0.0, half_angle=85.0,
+        z, cheru_rc, dx, 1400.0, 2800.0,
+        bearing_deg=0.0, half_angle=85.0,
         k=6, exclude=sinkmask | idukki_plugs)
     print(f"cheruthoni injection at "
           f"z={z[dom.cheru_rows, dom.cheru_cols].mean():.0f} m")

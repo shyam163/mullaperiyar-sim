@@ -10,8 +10,8 @@ it is an order-of-magnitude estimate at best.
 
 | scenario | pool | Mullaperiyar breach | Idukki treatment |
 |---|---|---|---|
-| `baseline_142` | 142 ft (380 Mm³) | Froehlich (2008), ~175 m wide over ~2.5 h | absorbs the surge (infinite sink; volume + peak inflow reported) |
-| `cascade_142` | 142 ft (380 Mm³) | Froehlich (2008) | Cheruthoni dam (proxy for the Idukki cluster, 1,460 Mm³) breaches when the surge arrives; flood routed to the sea |
+| `baseline_142` | 142 ft (380 Mm³) | Froehlich (2008), ~175 m wide over ~2.5 h | pool **rises physically** behind the sealed dam line, spillway closed; rise + peak inflow reported |
+| `cascade_142` | 142 ft (380 Mm³) | Froehlich (2008) | Cheruthoni dam (proxy for the Idukki cluster, 1,460 Mm³) breaches when the surge arrives; pool drains through the breach; flood routed to the sea |
 | `sudden_152` | 152 ft (443 Mm³) | instantaneous collapse of 1/3 of the crest | cascade on |
 
 Outputs per scenario in `outputs/<scenario>/`: `max_depth.tif` /
@@ -68,14 +68,19 @@ uv pip install --python .venv/bin/python numpy numba rasterio matplotlib \
    regression over historical earthen-dam failures; Mullaperiyar is a
    composite gravity dam — failure width/timing could differ greatly. The
    "sudden" scenario brackets the fast end.
-4. **The Idukki treatment is crude.** The reservoir is an infinite sink;
-   the cascade trigger (1 Mm³ of surge arrival) and the assumption that
-   Cheruthoni fails instantly-with-Froehlich-timing are placeholders, not
-   dam-safety analysis. The Idukki pool level, spillway operations, and the
-   arch dam's actual robustness (it is designed for far larger loads) are
-   all ignored. In cascade runs, downstream peaks are dominated by the
-   Cheruthoni release, so `cascade_142` and `sudden_152` differ mainly in
-   timing, not magnitude.
+4. **The Idukki treatment is stylized.** The lake is given a nominal
+   initial pool (surface 730 m ASL: the DSM-recorded 725 m water surface
+   plus a 5 m slab standing in for unknown bathymetry — the true level on
+   any given day is unknown), the three dams are modeled as solid 742 m
+   wall blocks (verified watertight at build time), and the **spillway is
+   assumed closed** — no gate operations, so the surge has nowhere to go
+   and the pool simply rises. Volume must convey through the lake's
+   narrow dendritic arms, so the mid-lake level lags the eastern arm by
+   hours. The cascade trigger (1 Mm³ of arrival) and Cheruthoni's
+   Froehlich failure are placeholders, not dam-safety analysis — the arch
+   dam is designed for far larger loads. In cascade runs, downstream
+   peaks are dominated by the Cheruthoni release, so `cascade_142` and
+   `sudden_152` differ mainly in timing, not magnitude.
 5. **No sediment, debris, dam-body obstruction, buildings, channel
    structures or spillway operations.** Bhoothathankettu barrage and every
    downstream regulator are transparent; bridges/embankments that would
@@ -125,13 +130,15 @@ with 1D channel models — reality likely sits between the two. The
 IIT Roorkee 12-minute breach at 30–45 km/h wave speed is itself an
 aggressive worst-case assumption, not a measurement.
 
-A post-hoc note on Idukki in `baseline_142`: integrating the DEM's
-stage–storage over the lake basin, the absorbed 307 Mm³ raises the pool
-by **~7.4 m** (725.0 → ~732.4 m ASL — from the satellite-era level almost
-exactly to FRL 732.6 m). Started at FRL instead, the same volume with no
-releases would sit ~6 m above FRL, and the modeled peak inflow of
-7,888 m³/s exceeds ordinary spillway practice for hours — which is the
-premise the cascade scenarios make explicit.
+On Idukki in `baseline_142`, the pool rise is now *simulated* rather than
+inferred: ~297 Mm³ impounds behind the closed dams and the mid-lake gauge
+rises **~5.2 m** (nominal 730 → ~735 m ASL), crossing FRL 732.6 m around
+hour 15 — in good agreement with the independent stage–storage arithmetic
+(+6.3 m at full leveling for that volume). Started at FRL instead, the
+same volume would sit ~6 m above FRL; with the modeled peak inflow of
+~7,000–8,000 m³/s exceeding ordinary spillway practice for hours, holding
+the level would be impossible — the premise the cascade scenarios make
+explicit.
 
 Sources: [IRJET 9(7) 2022 paper (PDF)](https://www.irjet.net/archives/V9/i7/IRJET-V9I792.pdf),
 [IIT Roorkee summary](https://www.expert-eyes.org/mullaperiyar/dam_break_analysis.html),

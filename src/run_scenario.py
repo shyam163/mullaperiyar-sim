@@ -52,13 +52,18 @@ def main():
     sim = Simulation(dom.z, dom.dx, dom.n_map, out_dir,
                      duration=args.hours * 3600.0)
     sim.set_initial_water(dom.depth0)
-    sim.set_reservoir_cells(dom.res_rows, dom.res_cols)
     sim.add_injection(dom.inj_rows, dom.inj_cols, t_h, q_h,
-                      drain_reservoir=True)
-    sim.set_sink(dom.sink_rows, dom.sink_cols)
+                      drain_cells=(dom.res_rows, dom.res_cols))
+    # Idukki: physically pooling basin behind the sealed rim, spillway
+    # assumed CLOSED (no releases); monitored for reporting + cascade
+    sim.set_basin(dom.sink_rows, dom.sink_cols)
     sim.gauges = dict(dom.gauges)
     # extra gauge just below the dam for the report
     sim.gauges["dam_toe"] = (int(dom.inj_rows[0]), int(dom.inj_cols[0]))
+    # pool gauge mid-lake: depth here IS the rise above the DSM lake
+    # surface (725 m datum)
+    lake_seed = terrain.Domain.ll_to_rc(dom, 9.820, 76.940)
+    sim.gauges["idukki_pool"] = lake_seed
 
     cascade_info = {}
     if cfg["cascade"]:
@@ -69,12 +74,13 @@ def main():
             print(f"CASCADE: Cheruthoni breach triggered at "
                   f"t={t_arr/3600:.2f} h", flush=True)
             sim.add_injection(dom.cheru_rows, dom.cheru_cols,
-                              tc + t_arr, qc, drain_reservoir=False)
+                              tc + t_arr, qc,
+                              drain_cells=(dom.sink_rows, dom.sink_cols))
             cascade_info["trigger_t"] = t_arr
             cascade_info["q_peak"] = qcp
             cascade_info["t_peak_after_trigger"] = tcp
 
-        sim.on_sink_arrival = trigger
+        sim.on_basin_arrival = trigger
 
     meta = dict(
         scenario=args.scenario, res=args.res,

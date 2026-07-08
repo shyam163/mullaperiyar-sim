@@ -88,14 +88,15 @@ class MapFigure:
                               vmax=vmax_depth)
         self.im = self.ax.imshow(
             np.full(z.shape, np.nan), cmap=BLUES, norm=self.norm,
-            interpolation="nearest")
+            interpolation="nearest", zorder=2)
         cb = self.fig.colorbar(self.im, ax=self.ax, shrink=0.62, pad=0.01)
         cb.set_label("water depth [m]")
-        # Idukki reservoir is an accounting sink (its cells are zeroed each
-        # step), so give the lake a static tint or it reads as dry land
+        # Idukki lake: light static tint marks the pre-existing water body
+        # (the DSM surface is the pool datum); the simulated pool RISE
+        # renders on top of it through the normal depth layer
         tint = np.zeros(z.shape + (4,), np.float32)
-        tint[dom.sink_rows, dom.sink_cols] = (0.42, 0.60, 0.78, 0.85)
-        self.ax.imshow(tint, interpolation="nearest")
+        tint[dom.sink_rows, dom.sink_cols] = (0.42, 0.60, 0.78, 0.55)
+        self.ax.imshow(tint, interpolation="nearest", zorder=1)
         halo = [patheffects.withStroke(linewidth=2.5, foreground="black")]
         marks = dict(terrain.TOWNS)
         marks["mullaperiyar dam"] = terrain.DAM_MULLA
@@ -201,12 +202,32 @@ def write_report(scen_dir: Path):
     if r["sink_first_arrival_s"] is not None:
         pk_bin = int(np.argmax(sink_bins))
         lines += [
+            "- Pool modeled as a physically rising basin behind a sealed "
+            "rim; **spillway assumed closed** (no releases)",
             f"- Surge arrival at reservoir: "
             f"**t = {r['sink_first_arrival_s']/3600:.2f} h**",
-            f"- Cumulative inflow absorbed: {r['sink_total']/1e6:.0f} Mm3",
+            f"- Peak volume impounded: {r['sink_total']/1e6:.0f} Mm3",
             f"- Peak inflow: {sink_bins[pk_bin]/gdt:,.0f} m3/s "
             f"at t = {pk_bin*gdt/3600:.1f} h",
         ]
+        if "idukki_pool" in gauge_names:
+            kp = gauge_names.index("idukki_pool")
+            dp = gs[:, kp]
+            last = int(np.nonzero(dp > 0)[0].max()) if (dp > 0).any() else 0
+            level0 = 725.0 + dp[0]   # initial pool surface (datum + slab)
+            rise = dp - dp[0]        # rise above the initial pool
+            if (rise > 0.05).any():
+                pk = float(rise.max())
+                lines.append(
+                    f"- **Pool level rise: {pk:.1f} m** above the nominal "
+                    f"{level0:.0f} m initial surface (peak level "
+                    f"~{level0+pk:.1f} m ASL, FRL is 732.6 m) at "
+                    f"t = {rise.argmax()*gdt/3600:.1f} h")
+                marks = [f"{rise[min(hh*60, last)]:.1f}"
+                         for hh in (6, 9, 12, 18, 24)]
+                lines.append(
+                    "- Rise at t = 6/9/12/18/24 h: "
+                    + " / ".join(marks) + " m")
     else:
         lines.append("- Surge never reached the reservoir")
     casc = meta.get("cascade") or {}
@@ -222,6 +243,8 @@ def write_report(scen_dir: Path):
               "| gauge | arrival (h) | peak depth (m) | time of peak (h) |",
               "|---|---|---|---|"]
     for k, name in enumerate(gauge_names):
+        if name == "idukki_pool":
+            continue   # reported in the Idukki section, not a town
         d = gs[:, k]
         if (d > ARRIVAL_THRESH).any():
             ta = np.argmax(d > ARRIVAL_THRESH) * gdt / 3600
