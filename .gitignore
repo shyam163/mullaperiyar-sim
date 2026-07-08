@@ -3,3 +3,6 @@ data/tiles/
 outputs/*/snapshots/
 __pycache__/
 *.pyc
+tests/_smoke_out/
+tests/_chan/
+outputs/qa_*.png

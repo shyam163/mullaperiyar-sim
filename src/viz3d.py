@@ -60,15 +60,22 @@ def build_scene(dem_path, meta):
         dom = terrain.build_domain(dem_path, meta["breach"]["volume"])
 
     # --- terrain mesh with baked hillshade colors
+    # NOTE: pv.StructuredGrid points iterate the meshgrid arrays in
+    # FORTRAN order - every per-vertex array must be ravel(order="F")
+    # or the colors/heights land on the wrong vertices (corduroy bands).
+    from matplotlib.colors import LinearSegmentedColormap
     ls = LightSource(azdeg=315, altdeg=45)
     shade = ls.hillshade(z, vert_exag=2.0, dx=dx, dy=dx)[..., None]
-    tcmap = plt.get_cmap("gist_earth")
-    tnorm = np.clip((z - 0.0) / 2400.0, 0, 1)
-    rgb = tcmap(0.15 + 0.75 * tnorm)[..., :3]
-    rgb = np.clip(rgb * (0.45 + 0.75 * shade), 0, 1)
+    tcmap = LinearSegmentedColormap.from_list("earth", [
+        "#42603f", "#6f8f4f", "#a8a35e", "#96825b", "#b5a284", "#e2ddd2"])
+    tnorm = np.clip(z / 1500.0, 0, 1) ** 0.7
+    rgb = tcmap(tnorm)[..., :3]
+    rgb = np.clip(rgb * (0.35 + 0.85 * shade), 0, 1)
     terrain_grid = pv.StructuredGrid(X, Y, z * VEXAG)
-    terrain_grid["rgb"] = (rgb.reshape(-1, 3, order="C") * 255).astype(
-        np.uint8)
+    # rgb has shape (ny, nx, 3); each channel raveled F over (ny, nx)
+    terrain_grid["rgb"] = np.stack(
+        [(rgb[..., k] * 255).astype(np.uint8).ravel(order="F")
+         for k in range(3)], axis=1)
 
     water_grid = pv.StructuredGrid(X, Y, z * VEXAG)
     water_grid["depth"] = np.full(z.size, np.nan)
@@ -109,19 +116,25 @@ def render(scen_dir: Path, every=3):
     vmax = 25.0 if meta["scenario"] != "baseline_142" else 15.0
 
     try:
-        pl = pv.Plotter(off_screen=True, window_size=(1920, 1080))
+        pl = pv.Plotter(off_screen=True, window_size=(1920, 1088))
     except Exception as e:  # noqa: BLE001
         sys.exit(f"VTK offscreen init failed ({e}) - run later per README")
 
     pl.add_mesh(sc["terrain"], scalars="rgb", rgb=True, show_edges=False,
                 smooth_shading=True)
+    # truncated Blues: even 30 cm of water must read as water, not haze
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+    blues = ListedColormap(plt.get_cmap("Blues")(np.linspace(0.45, 1.0, 160)))
     water_actor = pl.add_mesh(
-        sc["water"], scalars="depth", cmap="Blues", clim=(MIN_DEPTH, vmax),
-        opacity=0.82, nan_opacity=0.0, show_edges=False,
+        sc["water"], scalars="depth", cmap=blues, clim=(MIN_DEPTH, vmax),
+        opacity=0.88, nan_opacity=0.0, show_edges=False, smooth_shading=True,
         show_scalar_bar=True,
-        scalar_bar_args=dict(title="depth [m]", color="white",
-                             position_x=0.88, position_y=0.35,
-                             width=0.05, height=0.45))
+        scalar_bar_args=dict(title="depth (m)", color="white",
+                             position_x=0.90, position_y=0.30,
+                             width=0.035, height=0.40, n_labels=3,
+                             fmt="%.0f", title_font_size=20,
+                             label_font_size=16))
     pl.set_background("#1a1f2b")
 
     # town labels
@@ -146,8 +159,8 @@ def render(scen_dir: Path, every=3):
     center = np.array(sc["terrain"].center)
     ext = np.array([sc["X"].max() - sc["X"].min(),
                     sc["Y"].max() - sc["Y"].min()]).max()
-    orbit_r = 0.75 * ext
-    orbit_h = center[2] + 0.42 * ext
+    orbit_r = 0.62 * ext
+    orbit_h = center[2] + 0.30 * ext
 
     fly_xy = smooth_path(
         [ll_to_xy(dom, la, lo) for la, lo in WAYPOINTS], n)
@@ -173,15 +186,15 @@ def render(scen_dir: Path, every=3):
         wsurf = np.where(depth >= MIN_DEPTH, (z + depth) * VEXAG + 2.0,
                          np.nan)
         pts = sc["water"].points.copy()
-        pts[:, 2] = wsurf.ravel(order="C")
+        pts[:, 2] = wsurf.ravel(order="F")
         # keep dry vertices on the terrain so triangles at the wet edge
         # do not stretch to NaN
         dryfix = np.isnan(pts[:, 2])
-        pts[dryfix, 2] = (z * VEXAG).ravel(order="C")[dryfix] - 5.0
+        pts[dryfix, 2] = (z * VEXAG).ravel(order="F")[dryfix] - 5.0
         sc["water"].points = pts
         dd = depth.copy()
         dd[depth < MIN_DEPTH] = np.nan
-        sc["water"]["depth"] = dd.ravel(order="C")
+        sc["water"]["depth"] = dd.ravel(order="F")
         hh, mm = int(t_s // 3600), int(t_s % 3600 // 60)
         stamp.set_text("upper_left", f"t = {hh:02d}:{mm:02d}")
         pl.render()
@@ -201,13 +214,13 @@ def render(scen_dir: Path, every=3):
             print(f"orbit {i}/{n}", flush=True)
 
     # pass 2: fly-through, time advancing again
-    ahead = 6
+    ahead = 8
     for i, sp in enumerate(snaps):
         with np.load(sp) as f:
             hcm, t_s = f["h_cm"], float(f["t"])
         j = min(i + ahead, n - 1)
-        cam = (fly_xy[i, 0], fly_xy[i, 1], fly_z[i] + 2600.0)
-        foc = (fly_xy[j, 0], fly_xy[j, 1], fly_z[j] + 200.0)
+        cam = (fly_xy[i, 0], fly_xy[i, 1], fly_z[i] + 1500.0)
+        foc = (fly_xy[j, 0], fly_xy[j, 1], fly_z[j] + 100.0)
         pl.camera_position = [cam, foc, (0, 0, 1)]
         draw_frame(hcm, t_s)
         if i % 24 == 0:
