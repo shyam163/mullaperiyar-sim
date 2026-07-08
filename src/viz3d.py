@@ -99,7 +99,7 @@ def smooth_path(pts, n):
     return cs(np.linspace(0, 1, n))
 
 
-def render(scen_dir: Path, every=1):
+def render(scen_dir: Path, every=1, flysec=60):
     try:
         import pyvista as pv
     except ImportError:
@@ -161,13 +161,18 @@ def render(scen_dir: Path, every=1):
                     sc["Y"].max() - sc["Y"].min()]).max()
     orbit_r = 0.62 * ext
     orbit_h = center[2] + 0.36 * ext
+    ORBIT_ARC = np.radians(45.0)   # confined sweep, not a full circle
+    ORBIT_BASE = np.pi             # centered due WEST: view from the sea
 
+    # fly-through gets its own (longer) frame count: 60 s of video with
+    # the camera interpolated smoothly while snapshots advance underneath
+    n_fly = FPS * flysec
     fly_xy = smooth_path(
-        [ll_to_xy(dom, la, lo) for la, lo in WAYPOINTS], n)
+        [ll_to_xy(dom, la, lo) for la, lo in WAYPOINTS], n_fly)
     # two elevation series along the path: the valley floor (for the focal
-    # point) and the highest terrain within ~2 km (for camera clearance,
+    # point) and the highest terrain within ~3 km (for camera clearance,
     # so ridges beside the gorge cannot block the view)
-    rad = max(int(2000.0 / sc["dx"]), 1)
+    rad = max(int(3000.0 / sc["dx"]), 1)
     fly_floor, fly_clear = [], []
     for x, y in fly_xy:
         r = np.clip(int((sc["Y"][0, 0] - y) / sc["dx"]), 0, z.shape[0] - 1)
@@ -178,7 +183,7 @@ def render(scen_dir: Path, every=1):
     fly_floor = np.array(fly_floor)
     fly_clear = np.array(fly_clear)
     # smooth both so the camera does not bounce on gorge walls
-    k = max(9, n // 30)
+    k = max(9, n_fly // 30)
     box = np.ones(2 * k + 1) / (2 * k + 1)
     fly_floor = np.convolve(np.pad(fly_floor, k, mode="edge"), box,
                             "same")[k:-k]
@@ -210,31 +215,36 @@ def render(scen_dir: Path, every=1):
         pl.render()
         writer.append_data(pl.screenshot(return_img=True))
 
-    # pass 1: orbit while time advances
+    # pass 1: 45-degree arc from the sea side while time advances
     for i, sp in enumerate(snaps):
         with np.load(sp) as f:
             hcm, t_s = f["h_cm"], float(f["t"])
-        ang = 2 * np.pi * i / n - np.pi / 2
+        ang = ORBIT_BASE - ORBIT_ARC / 2 + ORBIT_ARC * i / max(n - 1, 1)
         pl.camera_position = [
             (center[0] + orbit_r * np.cos(ang),
              center[1] + orbit_r * np.sin(ang), orbit_h),
             center, (0, 0, 1)]
         draw_frame(hcm, t_s)
-        if i % 24 == 0:
-            print(f"orbit {i}/{n}", flush=True)
+        if i % 48 == 0:
+            print(f"arc {i}/{n}", flush=True)
 
-    # pass 2: fly-through, time advancing again
-    ahead = max(8, n // 36)
-    for i, sp in enumerate(snaps):
-        with np.load(sp) as f:
-            hcm, t_s = f["h_cm"], float(f["t"])
-        j = min(i + ahead, n - 1)
-        cam = (fly_xy[i, 0], fly_xy[i, 1], fly_clear[i] + 2200.0)
+    # pass 2: slow fly-through (n_fly frames); the camera glides while the
+    # snapshot index advances underneath it
+    ahead = max(8, n_fly // 36)
+    last_si, hcm, t_s = -1, None, 0.0
+    for i in range(n_fly):
+        si = int(round(i * (n - 1) / max(n_fly - 1, 1)))
+        if si != last_si:
+            with np.load(snaps[si]) as f:
+                hcm, t_s = f["h_cm"], float(f["t"])
+            last_si = si
+        j = min(i + ahead, n_fly - 1)
+        cam = (fly_xy[i, 0], fly_xy[i, 1], fly_clear[i] + 5000.0)
         foc = (fly_xy[j, 0], fly_xy[j, 1], fly_floor[j] + 100.0)
         pl.camera_position = [cam, foc, (0, 0, 1)]
         draw_frame(hcm, t_s)
-        if i % 24 == 0:
-            print(f"fly {i}/{n}", flush=True)
+        if i % 60 == 0:
+            print(f"fly {i}/{n_fly}", flush=True)
 
     writer.close()
     pl.close()
@@ -245,5 +255,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("scen_dir")
     ap.add_argument("--every", type=int, default=1)
+    ap.add_argument("--flysec", type=int, default=60,
+                    help="fly-through duration in seconds of video")
     a = ap.parse_args()
-    render(a.scen_dir, a.every)
+    render(a.scen_dir, a.every, a.flysec)
