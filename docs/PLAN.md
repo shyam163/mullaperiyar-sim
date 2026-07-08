@@ -16,7 +16,8 @@ headless/EGL trouble, ship 2D and leave `viz3d.py` ready to run — do not block
   absolute "base+43" is unreliable — anchor on volume, not elevation).
 - Idukki sink mask: flood fill z < ~735 m from seed ~(9.85N, 77.00E) in box 9.70–9.95N, 76.85–77.13E
   (Idukki FRL = 732.6 m; DSM shows reservoir surface ~730).
-- Cheruthoni dam: 9.845N, 76.977E, H=138 m, live storage 1460 Mm3. Downstream = south (Cheruthoni river → Periyar).
+- Cheruthoni dam: 9.845N, 76.977E, H=138 m, live storage 1460 Mm3. Downstream = NORTH
+  (verified on DSM: lake surface 725-733 m lies south of the dam line; the gorge at 550-690 m runs north).
 - Towns (snap gauge to lowest cell within 300 m): Vandiperiyar 9.566/77.088, Neriamangalam 10.05/76.78,
   Kalady 10.17/76.44, Aluva 10.11/76.35, Varappuzha 10.07/76.27. Idukki entry = recorded dynamically
   (first sink-mask cell the surge reaches).
@@ -44,7 +45,7 @@ headless/EGL trouble, ship 2D and leave `viz3d.py` ready to run — do not block
 - Reservoir routing upstream of dam is NOT modeled (level-pool assumption in breach ODE).
 - Idukki: baseline → sink (tally volume + peak inflow). Cascade → sink stays on for arriving surge
   (crude, disclosed) + Cheruthoni Froehlich hydrograph (overtopping K0=1.3) triggered when
-  cumulative surge inflow > 1 Mm3, injected south of Cheruthoni dam.
+  cumulative surge inflow > 1 Mm3, injected NORTH of Cheruthoni dam (downstream gorge).
 - Boundaries: west edge transmissive (sea); others reflective (flood never reaches them).
 - Snapshots: depth uint16 (cm) compressed npz every 300 s → 288 per run.
 

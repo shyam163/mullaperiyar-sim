@@ -65,10 +65,54 @@ def build_grid(mosaic_path: Path, res: float, out_path: Path):
             dst_crs=DST_CRS,
             resampling=Resampling.bilinear,
         )
-        # Copernicus uses 0 for ocean; keep as-is (sea level datum).
+        # Hydrological conditioning: the Copernicus DSM records canopy tops,
+        # which pinch the narrow forested Periyar gorge shut and turn it
+        # into a staircase of closed depressions; a flood would waste its
+        # whole volume filling them (and exact-level filling leaves dead-
+        # flat reaches where the flood then crawls). Priority-flood with an
+        # epsilon gradient (Barnes 2014) fills each depression with a tiny
+        # slope toward its spill point; cells outside depressions - the
+        # ocean, Vembanad, real lake surfaces - are untouched.
+        filled = priority_flood_eps(dst_arr, eps=0.05)
+        dfill = filled - dst_arr
+        print(f"  pit fill: {(dfill > 0.01).mean()*100:.1f}% cells raised, "
+              f"max {dfill.max():.1f} m, mean(raised) "
+              f"{dfill[dfill > 0.01].mean():.2f} m")
         with rasterio.open(out_path, "w", **profile) as dst:
-            dst.write(dst_arr, 1)
+            dst.write(filled.astype(np.float32), 1)
     print(f"wrote {out_path}  {width}x{height} @ {res} m")
+
+
+def priority_flood_eps(z, eps=0.05):
+    """Barnes (2014) priority-flood depression filling with epsilon slope.
+
+    Processes cells lowest-first from the border inward; a neighbour lying
+    below the spill path is raised to (spill + eps), giving every filled
+    depression a drainable gradient. O(n log n); pure python but cached.
+    """
+    import heapq
+    ny, nx = z.shape
+    out = z.astype(np.float64).copy()
+    closed = np.zeros((ny, nx), bool)
+    heap = []
+    for i in range(ny):
+        for j in (0, nx - 1):
+            heapq.heappush(heap, (out[i, j], i, j))
+            closed[i, j] = True
+    for j in range(1, nx - 1):
+        for i in (0, ny - 1):
+            heapq.heappush(heap, (out[i, j], i, j))
+            closed[i, j] = True
+    while heap:
+        zc, i, j = heapq.heappop(heap)
+        for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            r, c = i + di, j + dj
+            if 0 <= r < ny and 0 <= c < nx and not closed[r, c]:
+                closed[r, c] = True
+                if out[r, c] < zc:          # inside a depression
+                    out[r, c] = zc + eps
+                heapq.heappush(heap, (out[r, c], r, c))
+    return out
 
 
 def main():

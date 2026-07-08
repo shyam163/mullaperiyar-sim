@@ -1,0 +1,23 @@
+{
+  "duration": 7200.0,
+  "dx": 180.0,
+  "steps": 1440,
+  "wall_s": 0.5458593368530273,
+  "ledger": {
+    "initial": 0.0,
+    "injected": 36000000.0,
+    "drained": 0.0,
+    "sink": 0.0,
+    "boundary": 5658123.1654730635,
+    "clipped": 0.0
+  },
+  "ledger_error": -5.174014303419325e-16,
+  "storage_final": 30341876.83452692,
+  "sink_total": 0.0,
+  "sink_first_arrival_s": null,
+  "snap_times": [
+    5.0
+  ],
+  "gauge_names": [],
+  "gauge_dt": 60.0
+}

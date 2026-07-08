@@ -67,7 +67,7 @@ def test_dam_break():
     front0 = np.max(np.nonzero(sim.h.max(axis=0) > H_EPS)[0])
     sim.run(log_every=1e9)
     front1 = np.max(np.nonzero(sim.h.max(axis=0) > H_EPS)[0])
-    dm = abs(sim.storage() + sim.led["boundary"] + sim.led["clipped"] - v0) / v0
+    dm = abs(sim.storage() + sim.led["boundary"] - sim.led["clipped"] - v0) / v0
     neg = float(sim.h.min())
     print(f"dam-break: front {front0} -> {front1}, mass err {dm:.2e}, "
           f"min h {neg:.2e}, clipped {sim.led['clipped']:.3e} m3")

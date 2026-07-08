@@ -338,8 +338,9 @@ class Simulation:
 
     def ledger_error(self):
         led = self.led
+        # clipping negative depths to zero ADDS mass, so it enters with +
         expected = (led["initial"] + led["injected"] - led["drained"]
-                    - led["sink"] - led["boundary"] - led["clipped"])
+                    - led["sink"] - led["boundary"] + led["clipped"])
         denom = max(led["initial"] + led["injected"], 1.0)
         return (self.storage() - expected) / denom
 
