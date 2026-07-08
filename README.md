@@ -95,6 +95,49 @@ uv pip install --python .venv/bin/python numpy numba rasterio matplotlib \
 of a Mullaperiyar failure.** It is a physics-flavored animation of one
 prescribed what-if, on smoothed terrain, with empirical breach parameters.
 
+## Comparison with published studies
+
+Two quantitative comparators: the 2011 IIT Roorkee dam-break analysis
+(commissioned during the Kerala–Tamil Nadu dispute; figures via the
+summary at expert-eyes.org) and George et al. (2022), *Dam Break Hazard
+Mapping: A Case Study of Mullaperiyar Dam*, IRJET 9(7) — a 1D HEC-RAS
+study on an ALOS DEM covering both the Mullaperiyar breach and an Idukki
+cascade. A smaller-breach HEC-RAS study (IJRASET) is also cited where
+relevant.
+
+| quantity | published | this model | agreement |
+|---|---|---|---|
+| Peak breach outflow, Mullaperiyar | 89,121 m³/s (IIT-R / IRJET, 12-min breach); 15,405 m³/s (small-breach IJRASET) | 50,540 (Froehlich) / 65,287 (sudden) m³/s | inside the published range; ~30 % below the high end, which assumes a 12-min breach vs Froehlich's 151 min |
+| Depth just below the dam | 45.3 m (IRJET); 40.3 m (IJRASET) | ~40 m | matches |
+| Peak depth at Vandiperiyar | 28.4 m (IRJET) | 29.0–30.1 m | matches (±5 %) |
+| Share of released volume reaching Idukki | ~85 % (IRJET) | 81 % (307/380 Mm³) | matches |
+| Arrival at Vandiperiyar | 25 min (IRJET); Vallakkadavu 26 min (IIT-R) | 35 min (sudden) / 111 min (baseline) | sudden ~1.4× later; baseline later mostly because the Froehlich breach opens slowly |
+| Arrival at Idukki reservoir | 122–128 min | 5.1 h (sudden) / 6.8 h (baseline) | **2.4–3.2× slower** — the canopy-DSM canyon-widening bias of limitation 1, quantified |
+| Idukki-breach peak (cascade) | 30,458 m³/s (IRJET, small partial breach of the arch dam) | 387,000 m³/s (Froehlich on the full 1,460 Mm³) | structurally different breach assumptions, opposite directions |
+| Idukki breach → Aluva travel time | ~9.7 h (IRJET) | ~10.2 h (arrival 17.45 h − trigger 7.25 h) | matches (±5 %) |
+| Lowland depths in the cascade | Aluva 16 m, Ernakulam 7.5 m (1D); ~5 m at Varappuzha (other cascade studies) | Aluva 2.3 m, Varappuzha 1.9–2.4 m (still rising at 24 h) | **3–7× shallower** — 1D cross-sections confine the flow to the channel; this 2D model spreads it across the ~30 km Vembanad plain and sees no embankments |
+
+The pattern: gorge-confined physics (depths, volume fractions, lowland
+travel times) agrees well; quantities dominated by breach assumptions
+(peak discharge, early arrivals) differ by roughly the ratio of assumed
+breach-formation speeds; and the coastal-plain depths differ structurally
+with 1D channel models — reality likely sits between the two. The
+IIT Roorkee 12-minute breach at 30–45 km/h wave speed is itself an
+aggressive worst-case assumption, not a measurement.
+
+A post-hoc note on Idukki in `baseline_142`: integrating the DEM's
+stage–storage over the lake basin, the absorbed 307 Mm³ raises the pool
+by **~7.4 m** (725.0 → ~732.4 m ASL — from the satellite-era level almost
+exactly to FRL 732.6 m). Started at FRL instead, the same volume with no
+releases would sit ~6 m above FRL, and the modeled peak inflow of
+7,888 m³/s exceeds ordinary spillway practice for hours — which is the
+premise the cascade scenarios make explicit.
+
+Sources: [IRJET 9(7) 2022 paper (PDF)](https://www.irjet.net/archives/V9/i7/IRJET-V9I792.pdf),
+[IIT Roorkee summary](https://www.expert-eyes.org/mullaperiyar/dam_break_analysis.html),
+[IJRASET HEC-RAS study](https://www.ijraset.com/research-paper/dam-break-analysis-of-mullaperiyar-dam-using-hec-ras),
+[Idukki Reservoir Break Analysis](https://www.researchgate.net/publication/354293406_Idukki_Reservoir_Break_Analysis).
+
 ## Repository layout
 
 ```
