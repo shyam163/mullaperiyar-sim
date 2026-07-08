@@ -99,7 +99,7 @@ def smooth_path(pts, n):
     return cs(np.linspace(0, 1, n))
 
 
-def render(scen_dir: Path, every=1, flysec=60):
+def render(scen_dir: Path, every=1, flysec=0):
     try:
         import pyvista as pv
     except ImportError:
@@ -164,32 +164,37 @@ def render(scen_dir: Path, every=1, flysec=60):
     ORBIT_ARC = np.radians(45.0)   # confined sweep, not a full circle
     ORBIT_BASE = np.pi             # centered due WEST: view from the sea
 
-    # fly-through gets its own (longer) frame count: 60 s of video with
-    # the camera interpolated smoothly while snapshots advance underneath
+    # optional fly-through pass (flysec=0 -> arc only, the default): the
+    # camera is interpolated smoothly while snapshots advance underneath
     n_fly = FPS * flysec
     fly_xy = smooth_path(
-        [ll_to_xy(dom, la, lo) for la, lo in WAYPOINTS], n_fly)
-    # two elevation series along the path: the valley floor (for the focal
-    # point) and the highest terrain within ~3 km (for camera clearance,
-    # so ridges beside the gorge cannot block the view)
-    rad = max(int(3000.0 / sc["dx"]), 1)
-    fly_floor, fly_clear = [], []
-    for x, y in fly_xy:
-        r = np.clip(int((sc["Y"][0, 0] - y) / sc["dx"]), 0, z.shape[0] - 1)
-        c = np.clip(int((x - sc["X"][0, 0]) / sc["dx"]), 0, z.shape[1] - 1)
-        fly_floor.append(z[r, c] * VEXAG)
-        win = z[max(r - rad, 0):r + rad + 1, max(c - rad, 0):c + rad + 1]
-        fly_clear.append(win.max() * VEXAG)
-    fly_floor = np.array(fly_floor)
-    fly_clear = np.array(fly_clear)
-    # smooth both so the camera does not bounce on gorge walls
-    k = max(9, n_fly // 30)
-    box = np.ones(2 * k + 1) / (2 * k + 1)
-    fly_floor = np.convolve(np.pad(fly_floor, k, mode="edge"), box,
-                            "same")[k:-k]
-    # clearance must never smooth BELOW a ridge: take the running max first
-    fly_clear = np.maximum(fly_clear, np.convolve(
-        np.pad(fly_clear, k, mode="edge"), box, "same")[k:-k])
+        [ll_to_xy(dom, la, lo) for la, lo in WAYPOINTS],
+        n_fly) if n_fly > 0 else None
+    if n_fly > 0:
+        # two elevation series along the path: the valley floor (for the
+        # focal point) and the highest terrain within ~3 km (for camera
+        # clearance, so ridges beside the gorge cannot block the view)
+        rad = max(int(3000.0 / sc["dx"]), 1)
+        fly_floor, fly_clear = [], []
+        for x, y in fly_xy:
+            r = np.clip(int((sc["Y"][0, 0] - y) / sc["dx"]), 0,
+                        z.shape[0] - 1)
+            c = np.clip(int((x - sc["X"][0, 0]) / sc["dx"]), 0,
+                        z.shape[1] - 1)
+            fly_floor.append(z[r, c] * VEXAG)
+            win = z[max(r - rad, 0):r + rad + 1,
+                    max(c - rad, 0):c + rad + 1]
+            fly_clear.append(win.max() * VEXAG)
+        fly_floor = np.array(fly_floor)
+        fly_clear = np.array(fly_clear)
+        # smooth both so the camera does not bounce on gorge walls
+        k = max(9, n_fly // 30)
+        box = np.ones(2 * k + 1) / (2 * k + 1)
+        fly_floor = np.convolve(np.pad(fly_floor, k, mode="edge"), box,
+                                "same")[k:-k]
+        # clearance must never smooth BELOW a ridge: running max first
+        fly_clear = np.maximum(fly_clear, np.convolve(
+            np.pad(fly_clear, k, mode="edge"), box, "same")[k:-k])
 
     import imageio.v2 as imageio
     out = scen_dir / "animation_3d.mp4"
@@ -255,7 +260,8 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("scen_dir")
     ap.add_argument("--every", type=int, default=1)
-    ap.add_argument("--flysec", type=int, default=60,
-                    help="fly-through duration in seconds of video")
+    ap.add_argument("--flysec", type=int, default=0,
+                    help="optional fly-through duration in seconds of "
+                         "video (0 = sea-side arc only)")
     a = ap.parse_args()
     render(a.scen_dir, a.every, a.flysec)
