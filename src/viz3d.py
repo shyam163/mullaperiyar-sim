@@ -99,7 +99,7 @@ def smooth_path(pts, n):
     return cs(np.linspace(0, 1, n))
 
 
-def render(scen_dir: Path, every=3):
+def render(scen_dir: Path, every=1):
     try:
         import pyvista as pv
     except ImportError:
@@ -160,21 +160,31 @@ def render(scen_dir: Path, every=3):
     ext = np.array([sc["X"].max() - sc["X"].min(),
                     sc["Y"].max() - sc["Y"].min()]).max()
     orbit_r = 0.62 * ext
-    orbit_h = center[2] + 0.30 * ext
+    orbit_h = center[2] + 0.36 * ext
 
     fly_xy = smooth_path(
         [ll_to_xy(dom, la, lo) for la, lo in WAYPOINTS], n)
-    # terrain elevation along the path for camera height
-    fly_z = []
+    # two elevation series along the path: the valley floor (for the focal
+    # point) and the highest terrain within ~2 km (for camera clearance,
+    # so ridges beside the gorge cannot block the view)
+    rad = max(int(2000.0 / sc["dx"]), 1)
+    fly_floor, fly_clear = [], []
     for x, y in fly_xy:
         r = np.clip(int((sc["Y"][0, 0] - y) / sc["dx"]), 0, z.shape[0] - 1)
         c = np.clip(int((x - sc["X"][0, 0]) / sc["dx"]), 0, z.shape[1] - 1)
-        fly_z.append(z[r, c] * VEXAG)
-    fly_z = np.array(fly_z)
-    # smooth the camera altitude so it does not bounce on gorge walls
-    k = 9
-    fly_z = np.convolve(np.pad(fly_z, k, mode="edge"),
-                        np.ones(2 * k + 1) / (2 * k + 1), "same")[k:-k]
+        fly_floor.append(z[r, c] * VEXAG)
+        win = z[max(r - rad, 0):r + rad + 1, max(c - rad, 0):c + rad + 1]
+        fly_clear.append(win.max() * VEXAG)
+    fly_floor = np.array(fly_floor)
+    fly_clear = np.array(fly_clear)
+    # smooth both so the camera does not bounce on gorge walls
+    k = max(9, n // 30)
+    box = np.ones(2 * k + 1) / (2 * k + 1)
+    fly_floor = np.convolve(np.pad(fly_floor, k, mode="edge"), box,
+                            "same")[k:-k]
+    # clearance must never smooth BELOW a ridge: take the running max first
+    fly_clear = np.maximum(fly_clear, np.convolve(
+        np.pad(fly_clear, k, mode="edge"), box, "same")[k:-k])
 
     import imageio.v2 as imageio
     out = scen_dir / "animation_3d.mp4"
@@ -214,13 +224,13 @@ def render(scen_dir: Path, every=3):
             print(f"orbit {i}/{n}", flush=True)
 
     # pass 2: fly-through, time advancing again
-    ahead = 8
+    ahead = max(8, n // 36)
     for i, sp in enumerate(snaps):
         with np.load(sp) as f:
             hcm, t_s = f["h_cm"], float(f["t"])
         j = min(i + ahead, n - 1)
-        cam = (fly_xy[i, 0], fly_xy[i, 1], fly_z[i] + 1500.0)
-        foc = (fly_xy[j, 0], fly_xy[j, 1], fly_z[j] + 100.0)
+        cam = (fly_xy[i, 0], fly_xy[i, 1], fly_clear[i] + 2200.0)
+        foc = (fly_xy[j, 0], fly_xy[j, 1], fly_floor[j] + 100.0)
         pl.camera_position = [cam, foc, (0, 0, 1)]
         draw_frame(hcm, t_s)
         if i % 24 == 0:
@@ -234,6 +244,6 @@ def render(scen_dir: Path, every=3):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("scen_dir")
-    ap.add_argument("--every", type=int, default=3)
+    ap.add_argument("--every", type=int, default=1)
     a = ap.parse_args()
     render(a.scen_dir, a.every)
