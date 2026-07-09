@@ -110,17 +110,33 @@ study on an ALOS DEM covering both the Mullaperiyar breach and an Idukki
 cascade. A smaller-breach HEC-RAS study (IJRASET) is also cited where
 relevant.
 
-| quantity | published | this model | agreement |
+### Assumptions side by side
+
+| assumption | IIT Roorkee (2011) | George et al., IRJET (2022) | IJRASET study | **this model (2026)** |
+|---|---|---|---|---|
+| Hydraulic model | HEC-RAS 4.1, 1D St. Venant | HEC-RAS, 1D St. Venant | HEC-RAS, 1D | 2D shallow-water FV (Rusanov + hydrostatic reconstruction), numba |
+| Terrain | surveyed cross-sections | ALOS 30 m DEM | SRTM/HEC-GeoRAS | Copernicus GLO-30 canopy DSM, ε-pit-filled, 90 m cells |
+| Pool at failure | FRL 152 ft | 152 ft; 2018-flood peak inflow added | 152 ft | 142 ft (380 Mm³) and 152 ft (443 Mm³) variants |
+| Mullaperiyar breach | full development in **12 min** | overtopping, fast | conservative small breach | Froehlich 2008 (175 m, **151 min**) and instant 1/3-crest (122 m) |
+| Idukki pool response | overtopping wave assessed | inflow summed into Idukki analysis | — | pool rises physically behind sealed dam line, **spillway closed** |
+| Idukki/Cheruthoni breach | — | partial arch-dam breach | — | Froehlich on full live storage (1,460 Mm³), K₀ = 1.3 |
+| Downstream hydraulics | to Idukki | to the Arabian Sea, 1D channel | 36 km reach | to the sea, 2D overland spread, no embankments/structures |
+| Volume conservation | n/r | n/r | n/r | mass ledger closes to +0.000 % |
+
+### Results side by side
+
+| result | published | **this model** | agreement |
 |---|---|---|---|
-| Peak breach outflow, Mullaperiyar | 89,121 m³/s (IIT-R / IRJET, 12-min breach); 15,405 m³/s (small-breach IJRASET) | 50,540 (Froehlich) / 65,287 (sudden) m³/s | inside the published range; ~30 % below the high end, which assumes a 12-min breach vs Froehlich's 151 min |
-| Depth just below the dam | 45.3 m (IRJET); 40.3 m (IJRASET) | ~40 m | matches |
-| Peak depth at Vandiperiyar | 28.4 m (IRJET) | 29.0–30.1 m | matches (±5 %) |
-| Share of released volume reaching Idukki | ~85 % (IRJET) | 81 % (307/380 Mm³) | matches |
-| Arrival at Vandiperiyar | 25 min (IRJET); Vallakkadavu 26 min (IIT-R) | 35 min (sudden) / 111 min (baseline) | sudden ~1.4× later; baseline later mostly because the Froehlich breach opens slowly |
-| Arrival at Idukki reservoir | 122–128 min | 5.1 h (sudden) / 6.8 h (baseline) | **2.4–3.2× slower** — the canopy-DSM canyon-widening bias of limitation 1, quantified |
-| Idukki-breach peak (cascade) | 30,458 m³/s (IRJET, small partial breach of the arch dam) | 387,000 m³/s (Froehlich on the full 1,460 Mm³) | structurally different breach assumptions, opposite directions |
-| Idukki breach → Aluva travel time | ~9.7 h (IRJET) | ~10.2 h (arrival 17.45 h − trigger 7.25 h) | matches (±5 %) |
-| Lowland depths in the cascade | Aluva 16 m, Ernakulam 7.5 m (1D); ~5 m at Varappuzha (other cascade studies) | Aluva 2.3 m, Varappuzha 1.9–2.4 m (still rising at 24 h) | **3–7× shallower** — 1D cross-sections confine the flow to the channel; this 2D model spreads it across the ~30 km Vembanad plain and sees no embankments |
+| Peak breach outflow, Mullaperiyar | 89,121 m³/s (IIT-R / IRJET); 15,405 m³/s (IJRASET) | 50,540 (Froehlich) / 65,287 (sudden) m³/s | inside the published range; ~30 % below the high end, which assumes a 12-min breach vs Froehlich's 151 min |
+| Depth just below the dam | 45.3 m (IRJET); 40.3 m (IJRASET) | 39.7–40.6 m | **matches** |
+| Arrival at Vandiperiyar (7.4 km) | 25 min (IRJET); Vallakkadavu (3.6 km) 26 min (IIT-R) | 35 min (sudden) / 111 min (baseline) | sudden ~1.4× later; baseline later mostly because the Froehlich breach opens slowly |
+| Peak depth at Vandiperiyar | 28.4 m (IRJET) | 29.0–30.1 m | **matches (±5 %)** |
+| Arrival at Idukki reservoir | 122 min (IRJET) / 128 min (IIT-R) | 311 min (sudden) / 410 min (baseline) | **2.4–3.4× slower** — the canopy-DSM canyon-widening bias of limitation 1, quantified |
+| Share of released volume reaching Idukki | ~85 % (IRJET) | 78 % (297/380 Mm³ impounded) | matches |
+| Idukki pool response | overtopping of Cheruthoni assessed (IIT-R) | +5.2 m rise (730 → ~735.2 m ASL, crosses FRL at ~15 h; spillway closed) | comparable premise: the surge exceeds FRL headroom |
+| Idukki-breach peak (cascade) | 30,458 m³/s (IRJET, small partial breach) | 387,000 m³/s (Froehlich, full storage) | structurally different breach assumptions, opposite directions |
+| Idukki breach → Aluva travel time | ~9.7 h (IRJET) | ~10.1 h (arrival 17.3 h − trigger 7.25 h) | **matches (±5 %)** |
+| Lowland depths in the cascade | Aluva 16 m, Ernakulam 7.5 m (1D IRJET); ~5 m at Varappuzha (other cascade studies) | Neriamangalam 46.7 m; Kalady 3.2 m; Aluva 2.3 m; Varappuzha 1.9–2.4 m (still rising at 24 h) | gorge depths comparable; **plain depths 3–7× shallower** — 1D cross-sections confine the flow to the channel; this 2D model spreads it across the ~30 km Vembanad plain and sees no embankments |
 
 The pattern: gorge-confined physics (depths, volume fractions, lowland
 travel times) agrees well; quantities dominated by breach assumptions
