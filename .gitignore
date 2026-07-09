@@ -6,3 +6,5 @@ __pycache__/
 tests/_smoke_out/
 tests/_chan/
 outputs/qa_*.png
+vendor/
+hecras/

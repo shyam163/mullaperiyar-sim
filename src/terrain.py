@@ -32,7 +32,8 @@ IDUKKI_SEEDS = [(9.838, 76.980), (9.820, 76.940), (9.780, 77.040),
                 (9.800, 76.990), (9.760, 77.080), (9.830, 77.060)]
 IDUKKI_MAX_WSE = 736.0                     # FRL 732.6 m + margin
 IDUKKI_SURFACE = (690.0, 736.0)            # plausible DSM lake-surface range
-LAKE_SLAB = 5.0                            # nominal initial lake depth [m]
+import os
+LAKE_SLAB = float(os.environ.get("MULLA_LAKE_SLAB", 5.0))  # initial lake depth [m]
 
 
 @dataclass
