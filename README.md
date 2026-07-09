@@ -161,6 +161,30 @@ Sources: [IRJET 9(7) 2022 paper (PDF)](https://www.irjet.net/archives/V9/i7/IRJE
 [IJRASET HEC-RAS study](https://www.ijraset.com/research-paper/dam-break-analysis-of-mullaperiyar-dam-using-hec-ras),
 [Idukki Reservoir Break Analysis](https://www.researchgate.net/publication/354293406_Idukki_Reservoir_Break_Analysis).
 
+## HEC-RAS 2D cross-check (attempted, incomplete)
+
+An attempt to run HEC-RAS 6.6 2D on the same terrain + hydrograph lives in
+`src/export_hecras.py`, `src/hecras_quadmesh.py`, `src/hecras_inject_ec.py`,
+`src/hecras_trim_orphans.py` (toolchain: `neeraip/hecras-v66-linux`,
+gitignored under `vendor/`). Status:
+
+- HEC's official Linux compute engines run natively here (bundled Muncie
+  and BEFORE_RUN examples reproduce end-to-end).
+- A fully headless project-authoring pipeline works: corridor mesh
+  (structured quads validated against every RASMapper topology convention),
+  30 m subgrid terrain, Manning land cover, breach hydrograph as a BC-line
+  flow, boundary/event conditions injected into the plan HDF.
+- One configuration simulated the full 24 h (99.7 % complete before an
+  end-of-run thread crash), but with the inflow volume being deleted at
+  the boundary; after fixing the face-orientation conventions the solver
+  became unstable on the hand-authored geometry (run-to-run varying init
+  segfaults - symptomatic of some remaining undocumented format
+  expectation).
+- Conclusion: headless authoring of RAS 2D geometry from scratch is ~90 %
+  reproduced but not solver-stable. The reliable route is a one-time mesh
+  export from RAS Mapper on Windows (Workflow A/B), which then re-runs
+  natively on Linux - proven with the bundled examples.
+
 ## Repository layout
 
 ```
