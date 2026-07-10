@@ -41,53 +41,95 @@ def write_asc(path, arr, tr, fmt="%.3f"):
 
 
 def main():
-    OUT.mkdir(exist_ok=True)
-    (OUT / "results").mkdir(exist_ok=True)
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--scenario", choices=["baseline", "cascade"],
+                    default="baseline")
+    args = ap.parse_args()
+    cascade = args.scenario == "cascade"
+    out = OUT / "cascade" if cascade else OUT
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "results").mkdir(exist_ok=True)
+
     with contextlib.redirect_stdout(io.StringIO()):
         dom = terrain.build_domain(ROOT / "data" / f"dem_utm{RES}.tif", 380e6)
     tr = dom.transform
-    assert terrain.LAKE_SLAB == 0.0, "run with MULLA_LAKE_SLAB=0"
+    if cascade:
+        # match our cascade_142_lfmatch run: slab pool + prescribed trigger
+        assert terrain.LAKE_SLAB > 0.0, "cascade needs the default slab"
+        meta = json.load(open(ROOT / "outputs" / "cascade_142_lfmatch" /
+                              "scenario_meta.json"))
+        trigger_t = float(meta["cascade"]["trigger_t"])
+        print(f"prescribing Cheruthoni breach at t={trigger_t/3600:.2f} h "
+              f"(from our 180 m run)")
+    else:
+        assert terrain.LAKE_SLAB == 0.0, "baseline runs with MULLA_LAKE_SLAB=0"
 
-    write_asc(OUT / "dem.asc", dom.z, tr)
-    write_asc(OUT / "manning.asc", dom.n_map, tr, fmt="%.3f")
+    write_asc(out / "dem.asc", dom.z, tr)
+    write_asc(out / "manning.asc", dom.n_map, tr, fmt="%.3f")
+    if cascade:
+        # identical initial state: burned reservoir + Idukki slab pool
+        # (LISFLOOD cannot drain the pool through the breach - noted)
+        write_asc(out / "water.asc", dom.depth0, tr)
 
-    # hydrograph -> per-point m^2/s series at the injection cells
+    # Mullaperiyar hydrograph -> per-point m^2/s series
     t, q = np.load(ROOT / "outputs" / "baseline_142" / "hydrograph.npy")
     t5 = np.arange(0, 86400 + 1, 300.0)
     q5 = np.interp(t5, t, q)
     pts = list(zip(dom.inj_rows.tolist(), dom.inj_cols.tolist()))
     npts = len(pts)
 
-    with open(OUT / "mulla.bci", "w") as f:
-        for k, (r, c) in enumerate(pts):
+    with open(out / "mulla.bci", "w") as f:
+        for r, c in pts:
             x = tr.c + (c + 0.5) * tr.a
             y = tr.f + (r + 0.5) * tr.e
             f.write(f"P {x:.1f} {y:.1f} QVAR inflow\n")
-    with open(OUT / "mulla.bdy", "w") as f:
+        if cascade:
+            for r, c in zip(dom.cheru_rows.tolist(),
+                            dom.cheru_cols.tolist()):
+                x = tr.c + (c + 0.5) * tr.a
+                y = tr.f + (r + 0.5) * tr.e
+                f.write(f"P {x:.1f} {y:.1f} QVAR cheruthoni\n")
+
+    with open(out / "mulla.bdy", "w") as f:
         f.write("Mullaperiyar Froehlich 142ft breach hydrograph\n")
         f.write("inflow\n")
         f.write(f"{len(t5)} seconds\n")
         for ti, qi in zip(t5, q5):
             f.write(f"{qi / (tr.a * npts):.6f} {ti:.0f}\n")
+        if cascade:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import breach
+            tc, qc, qcp, _ = breach.hydrograph(breach.cheruthoni_spec())
+            nch = len(dom.cheru_rows)
+            # zero until the prescribed trigger, then the full hydrograph
+            tt = np.arange(0, 86400 + 1, 300.0)
+            qq = np.interp(tt - trigger_t, tc, qc, left=0.0, right=0.0)
+            f.write("cheruthoni\n")
+            f.write(f"{len(tt)} seconds\n")
+            for ti, qi in zip(tt, qq):
+                f.write(f"{qi / (tr.a * nch):.6f} {ti:.0f}\n")
 
-    # stage gauges: dam_toe, vandiperiyar, mid-lake
+    # stage gauges
     g = []
     r, c = int(dom.inj_rows[0]), int(dom.inj_cols[0])
     g.append(("dam_toe", tr.c + (c + 0.5) * tr.a, tr.f + (r + 0.5) * tr.e))
-    r, c = dom.gauges["vandiperiyar"]
-    g.append(("vandiperiyar", tr.c + (c + 0.5) * tr.a,
-              tr.f + (r + 0.5) * tr.e))
+    towns = ["vandiperiyar"] + (
+        ["neriamangalam", "kalady", "aluva", "varappuzha"] if cascade else [])
+    for name in towns:
+        r, c = dom.gauges[name]
+        g.append((name, tr.c + (c + 0.5) * tr.a, tr.f + (r + 0.5) * tr.e))
     rc = dom.ll_to_rc(9.820, 76.940)
     g.append(("idukki_pool", tr.c + (rc[1] + 0.5) * tr.a,
               tr.f + (rc[0] + 0.5) * tr.e))
-    with open(OUT / "mulla.stage", "w") as f:
+    with open(out / "mulla.stage", "w") as f:
         f.write(f"{len(g)}\n")
         for _, x, y in g:
             f.write(f"{x:.1f} {y:.1f}\n")
-    (OUT / "gauge_names.json").write_text(
+    (out / "gauge_names.json").write_text(
         json.dumps([name for name, _, _ in g]))
 
-    par = f"""# Mullaperiyar baseline_142 - LISFLOOD-FP 8 (local inertial)
+    par = f"""# Mullaperiyar {args.scenario} - LISFLOOD-FP 8 (local inertial)
 DEMfile        dem.asc
 resroot        mulla
 dirroot        results
@@ -102,9 +144,11 @@ stagefile      mulla.stage
 acceleration
 depththresh    0.01
 """
-    (OUT / "mulla.par").write_text(par)
-    print(f"lisflood project written to {OUT} ({npts} inflow points, "
-          f"{len(t5)} hydrograph steps)")
+    if cascade:
+        par += "startfile      water.asc\n"
+    (out / "mulla.par").write_text(par)
+    print(f"lisflood {args.scenario} project written to {out} "
+          f"({npts} inflow points)")
 
 
 if __name__ == "__main__":

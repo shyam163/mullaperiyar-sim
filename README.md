@@ -212,6 +212,27 @@ that the numbers here are properties of the terrain + hydrograph, not
 artifacts of our solver - while leaving limitation 1 (the canopy-DSM
 terrain itself) fully in force for both.
 
+The **cascade scenario** was also cross-checked (Cheruthoni hydrograph
+prescribed at the trigger time from our run, t = 10.10 h at 180 m;
+LISFLOOD cannot drain the pool through the breach, so the lake itself
+diverges by design):
+
+| gauge | ours: arrival / peak | LISFLOOD-FP: arrival / peak |
+|---|---|---|
+| Neriamangalam | 11.8 h / 50.5 m | 12.3 h / 36.3 m |
+| Kalady | 16.5 h / 5.2 m | 19.3 h / 5.6 m |
+| Aluva | 20.9 h / 2.0 m | 23.8 h / 1.0 m |
+| Varappuzha | dry at 24 h (180 m grid) | dry at 24 h |
+
+Max-depth footprint IoU 0.72 over the full 180-km cascade path. Arrival
+times agree within ~4-15 %; the largest depth disagreement is in the
+steep Cheruthoni gorge (50 vs 36 m at Neriamangalam), where the
+local-inertial approximation is known to diverge from full SWE - exactly
+the regime where both should be trusted least. Fixed along the way: a
+dangling-pointer bug in LISFLOOD-FP's `LoadBCVar` (vector reallocation
+invalidates stored TimeSeries pointers whenever a .bdy has more than one
+series; patched with a `reserve()`).
+
 ## Repository layout
 
 ```
