@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23edf1f0%22/><rect y=%2255%22 width=%22100%22 height=%2245%22 fill=%22%230f5460%22/><rect y=%2230%22 width=%22100%22 height=%224%22 fill=%22%23b3372c%22/></svg>">
-<title>The Dam, the Dispute, and Me — v2, now with moving water</title>
+<title>The Dam, the Dispute, and Me</title>
 <style>
   :root{
     --paper:#edf1f0; --ink:#1c2b33; --teal:#0f5460; --gauge:#b3372c;
@@ -114,6 +114,18 @@
   .clock button:hover{border-color:var(--teal); color:var(--teal)}
   .clock button:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
   @media (prefers-reduced-motion: reduce){ .clock.armed .fill{transition:none} }
+
+  /* ---------- collapsible appendix ---------- */
+  .appendix{border:1px solid var(--rule); background:var(--card); margin:2.5rem 0 0; padding:0}
+  .appendix summary{cursor:pointer; font-family:var(--mono); font-size:.74rem;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--teal);
+    padding:.85rem 1.1rem; user-select:none}
+  .appendix summary:hover{color:var(--ink)}
+  .appendix summary:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+  .appendix[open] summary{border-bottom:1px solid var(--rule)}
+  .appendix > p, .appendix > figure{margin-left:1.1rem; margin-right:1.1rem}
+  .appendix > p{margin-top:1rem; font-size:.95rem}
+  .appendix > figure:last-child{padding-bottom:1.1rem; margin-bottom:0}
 </style>
 </head>
 <body>
@@ -133,7 +145,7 @@
 <header class="hero">
   <p class="eyebrow">a simulation diary · periyar river · idukki, kerala · v2</p>
   <h1>The Dam, the Dispute, and Me</h1>
-  <p class="dek">In which I get tired of not knowing whether a 130-year-old dam is a civilizational threat or a talking point, and decide to flood Kerala on my own PC, carefully, several times. Now with moving water.</p>
+  <p class="dek">In which I get tired of not knowing whether a 130-year-old dam is a civilizational threat or a talking point, and decide to flood Kerala on my own PC, carefully, several times.</p>
   <p class="byline">≈ 20 min read + 3 short films · every number reproducible from the repo · none of it is engineering advice</p>
 </header>
 
@@ -290,6 +302,27 @@
 <div class="disclaimer reveal">
 This is a visualization exercise on satellite terrain with empirical breach guesses — order-of-magnitude at best, biased late on arrival times, and silent on the only question that actually matters: the probability of failure. It is not a hazard map. If you live in the Periyar valley, your district's disaster-management plan outranks every pixel of this. And the dam itself? I have no idea whether it will fail. Neither, I suspect, do the people who sound most certain — in either direction.
 </div>
+
+<details class="appendix reveal">
+  <summary>appendix · the realistic scenario in full — baseline_142, where Idukki contains it</summary>
+  <p>Everything the model produced for the most probable failure scenario: the 142 ft pool, the Froehlich breach, and the surge ending its journey inside the Idukki reservoir — which rises about 5.2 m and holds. No town north of the lake gets wet.</p>
+  <figure>
+    <img loading="lazy" src="outputs/baseline_142/max_depth.png" alt="Baseline scenario: maximum flood depth map — the flood corridor ends at the Idukki reservoir">
+    <figcaption>maximum depth over 24 h · the corridor runs from the dam through vandiperiyar and ends in the idukki arms. the lowlands never appear.</figcaption>
+  </figure>
+  <figure>
+    <img loading="lazy" src="outputs/baseline_142/arrival.png" alt="Baseline scenario: flood arrival time map">
+    <figcaption>arrival time · dam to idukki in ~7 h in this model (the terrain makes this an upper bound — see the complaints section).</figcaption>
+  </figure>
+  <figure>
+    <video controls muted loop playsinline preload="none" poster="outputs/baseline_142/max_depth.png" src="outputs/baseline_142/animation.mp4"></video>
+    <figcaption>the 24 hours as film · watch the reservoir drain, the gorge fill, and the surge disappear into the lake.</figcaption>
+  </figure>
+  <figure>
+    <video controls muted loop playsinline preload="none" poster="outputs/baseline_142/poster_3d.jpg" src="outputs/baseline_142/animation_3d.mp4"></video>
+    <figcaption>the same, in three dimensions · camera over the arabian sea looking east; terrain exaggerated 2.5×. the important film: the one where nothing reaches the coast.</figcaption>
+  </figure>
+</details>
 
 <footer>
   simulated 2026-07-06 → 2026-07-10 · v2 with films · solver, data pipeline &amp; full methodology: <a href="docs/JOURNEY.md">docs/JOURNEY.md</a> · scenario reports and all three 2D/3D animations under <code>outputs/</code> · cross-checked against LISFLOOD-FP 8.0.3 · published comparisons: IIT Roorkee (2011), George et&nbsp;al. IRJET 9(7) 2022, IJRASET · Copernicus GLO-30 © ESA · this page renders one author's opinion and 0.000% missing water
