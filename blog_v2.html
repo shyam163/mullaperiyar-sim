@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dam, the Dispute, and Me — v2, now with moving water</title>
+<style>
+  :root{
+    --paper:#edf1f0; --ink:#1c2b33; --teal:#0f5460; --gauge:#b3372c;
+    --khaki:#79715f; --card:#f6f8f7; --rule:#c9d2d0;
+    --mono:"SF Mono","Cascadia Code",Consolas,"DejaVu Sans Mono",monospace;
+    --serif:"Palatino Linotype","Book Antiqua",Palatino,P052,Georgia,serif;
+    --body:Charter,Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); font-size:1.06rem; line-height:1.72}
+
+  /* ---------- gauge rail ---------- */
+  #gauge{position:fixed; left:0; top:0; bottom:0; width:64px;
+    border-right:1px solid var(--rule); background:var(--card);
+    font-family:var(--mono); font-size:.62rem; color:var(--khaki); z-index:5; user-select:none}
+  #gauge .water{position:absolute; left:0; right:0; bottom:0; height:0%;
+    background:linear-gradient(180deg, rgba(15,84,96,.28), rgba(15,84,96,.45));
+    transition:height .1s linear}
+  @media (prefers-reduced-motion: reduce){ #gauge .water{transition:none} }
+  #gauge .tick{position:absolute; left:0; right:0; border-top:1px solid var(--rule); padding:1px 4px}
+  #gauge .tick b{font-weight:600; color:var(--ink)}
+  #gauge .tick.danger{border-top:2px solid var(--gauge); color:var(--gauge)}
+  #gauge .tick.danger b{color:var(--gauge)}
+  #gauge .lbl{position:absolute; top:8px; left:0; right:0; text-align:center; letter-spacing:.12em}
+  @media(max-width:1080px){ #gauge{display:none} }
+
+  main{max-width:46rem; margin:0 auto; padding:0 1.4rem 6rem}
+  @media(min-width:1080px){ main{margin-left:calc(50% - 23rem + 32px)} }
+
+  header.hero{padding:5rem 0 2.5rem; border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono); font-size:.72rem; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--khaki); margin:0 0 1rem}
+  h1{font-family:var(--serif); font-weight:700; font-size:clamp(2rem,5vw,3.1rem);
+    line-height:1.12; margin:.2rem 0 1rem; letter-spacing:-.01em}
+  .dek{font-size:1.16rem; color:var(--teal); font-style:italic; margin:0}
+  .byline{font-family:var(--mono); font-size:.75rem; color:var(--khaki); margin-top:1.4rem}
+  h2{font-family:var(--serif); font-size:1.55rem; line-height:1.25; margin:3rem 0 .8rem}
+  p{margin:0 0 1.1rem}
+  a{color:var(--teal)}
+  .fieldnote{border-left:3px solid var(--khaki); background:var(--card);
+    padding:.7rem 1rem; margin:1.4rem 0; font-size:.94rem; color:#4c4a42}
+  .fieldnote::before{content:"field note"; display:block; font-family:var(--mono);
+    font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--khaki); margin-bottom:.25rem}
+  .disclaimer{border:2px solid var(--gauge); background:#fbf3f2; padding:1rem 1.2rem;
+    margin:2rem 0; font-size:.95rem}
+  .disclaimer::before{content:"the red line"; font-family:var(--mono); font-size:.62rem;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--gauge); display:block; margin-bottom:.3rem}
+
+  figure{margin:1.8rem 0}
+  figure img, figure video{width:100%; height:auto; border:1px solid var(--rule); background:#0d1b21; display:block}
+  figure img{background:#fff}
+  figcaption{font-family:var(--mono); font-size:.72rem; color:var(--khaki); margin-top:.45rem; line-height:1.5}
+  .tablewrap{overflow-x:auto; margin:1.6rem 0}
+  table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:.78rem; line-height:1.45}
+  caption{font-family:var(--mono); font-size:.7rem; text-align:left; color:var(--khaki);
+    letter-spacing:.12em; text-transform:uppercase; padding-bottom:.5rem}
+  th{border-bottom:2px solid var(--ink); text-align:left; padding:.4rem .6rem .3rem 0; font-weight:600}
+  td{border-bottom:1px solid var(--rule); padding:.38rem .6rem .38rem 0; vertical-align:top}
+  td.hit{color:var(--teal); font-weight:600}
+  td.miss{color:var(--gauge)}
+  tr:hover td{background:rgba(15,84,96,.05)}
+  footer{margin-top:4rem; padding-top:1.2rem; border-top:2px solid var(--ink);
+    font-family:var(--mono); font-size:.72rem; color:var(--khaki); line-height:1.7}
+  ::selection{background:rgba(15,84,96,.25)}
+
+  /* ---------- scroll reveal (subtle) ---------- */
+  .reveal{opacity:0; transform:translateY(14px); transition:opacity .7s ease, transform .7s ease}
+  .reveal.in{opacity:1; transform:none}
+  @media (prefers-reduced-motion: reduce){ .reveal{opacity:1; transform:none; transition:none} }
+
+  /* ---------- animated hydrograph ---------- */
+  .hydro{background:var(--card); border:1px solid var(--rule); padding:1rem 1rem .6rem; margin:1.8rem 0}
+  .hydro svg{width:100%; height:auto; display:block}
+  .hydro .axis{stroke:var(--rule); stroke-width:1}
+  .hydro text{font-family:var(--mono); font-size:11px; fill:var(--khaki)}
+  .hydro .curve{fill:none; stroke-width:2.5}
+  .hydro .fro{stroke:var(--teal)}
+  .hydro .tf12{stroke:var(--gauge); stroke-dasharray:none}
+  .hydro .legend b{font-weight:600}
+  .hydro.armed .curve{stroke-dashoffset:0 !important}
+  .hydro .curve{transition:stroke-dashoffset 2.8s ease-out}
+  .hydro .tf12{transition-delay:.9s}
+  @media (prefers-reduced-motion: reduce){ .hydro .curve{transition:none} }
+
+  /* ---------- the compressed clock (arrival timeline) ---------- */
+  .clock{background:var(--card); border:1px solid var(--rule); padding:1.1rem 1.2rem 2.9rem; margin:1.8rem 0; position:relative}
+  .clock .track{position:relative; height:10px; background:#dde4e2; border:1px solid var(--rule); margin:2.6rem 0 0}
+  .clock .fill{position:absolute; left:0; top:0; bottom:0; width:0;
+    background:linear-gradient(90deg, rgba(15,84,96,.85), rgba(15,84,96,.55))}
+  .clock.armed .fill{width:100%; transition:width 12s linear}
+  .clock .mk{position:absolute; top:-6px; width:2px; height:22px; background:var(--khaki); opacity:.45;
+    transition:opacity .4s ease, background .4s ease}
+  .clock .mk span{position:absolute; left:50%; transform:translateX(-50%); top:24px; white-space:nowrap;
+    font-family:var(--mono); font-size:.62rem; color:var(--khaki)}
+  .clock .mk.up span{top:auto; bottom:26px}
+  .clock .mk b{display:block; text-align:center; font-weight:600}
+  .clock.armed .mk{opacity:1}
+  .clock .mk.hit{background:var(--teal)} .clock.armed .mk.hit{}
+  .clock .mk.boom{background:var(--gauge)}
+  .clock .mk.boom span{color:var(--gauge)}
+  .clock .title{font-family:var(--mono); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--khaki)}
+  .clock button{position:absolute; right:1rem; top:.9rem; font-family:var(--mono); font-size:.66rem;
+    background:none; border:1px solid var(--khaki); color:var(--khaki); padding:.2rem .55rem; cursor:pointer}
+  .clock button:hover{border-color:var(--teal); color:var(--teal)}
+  .clock button:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){ .clock.armed .fill{transition:none} }
+</style>
+</head>
+<body>
+
+<aside id="gauge" aria-hidden="true">
+  <div class="water" id="gaugewater"></div>
+  <div class="lbl">GAUGE<br>(ft)</div>
+  <div class="tick"        style="top:12%">160</div>
+  <div class="tick danger" style="top:26%"><b>152</b> FRL</div>
+  <div class="tick"        style="top:44%"><b>142</b> now</div>
+  <div class="tick"        style="top:55%"><b>136</b> '79</div>
+  <div class="tick"        style="top:72%">120</div>
+  <div class="tick"        style="top:90%">104</div>
+</aside>
+
+<main>
+<header class="hero">
+  <p class="eyebrow">a simulation diary · periyar river · idukki, kerala · v2</p>
+  <h1>The Dam, the Dispute, and Me</h1>
+  <p class="dek">In which I get tired of not knowing whether a 130-year-old dam is a civilizational threat or a talking point, and decide to flood Kerala on my own laptop, carefully, several times. Now with moving water.</p>
+  <p class="byline">≈ 20 min read + 3 short films · every number reproducible from the repo · none of it is engineering advice</p>
+</header>
+
+<h2 class="reveal">The argument that is older than everyone arguing it</h2>
+<p class="reveal">There is a dam in the Western Ghats that was finished in 1895, built from lime-surkhi masonry by British engineers, on a lease signed in 1886 that runs for <em>nine hundred and ninety-nine years</em>. Everyone involved in signing it is extremely dead. The dam sits in Kerala, is operated by Tamil Nadu, and holds back the Periyar river so its water can be sent the other way, east, through a tunnel, to irrigate land the river never intended to visit. This arrangement has been in court, on and off, longer than most countries have existed in their current form.</p>
+<p class="reveal">The dispute has a shape you already know. Kerala, which lives downstream, says the dam is a geriatric time bomb and cites 3.5 million people in the flood path. Tamil Nadu, which lives off the water, says the dam is fine, strengthened, inspected, and that the panic is theatre. The Supreme Court has weighed in more than once, and the number everyone fights over is a mark on a gauge: whether the reservoir may stand at <strong>136, 142, or 152 feet</strong>. Entire election cycles have metabolized those sixteen feet. (The gauge on the left edge of this page is real, to scale, and fills as you read. Make of that what you will.)</p>
+<p class="reveal">Here is my problem: both sides are running an incentive structure that rewards exaggeration. Downstream, fear is mobilizing. Upstream, reassurance is existential. Somewhere underneath the affidavits there is an actual physical question — <em>if this dam failed, what would the water actually do?</em> — and it felt increasingly deranged to me that I was forming opinions about it from headlines. I have a laptop. Water obeys equations. The equations are public. The terrain has been measured from orbit. How hard could it be?</p>
+<p class="fieldnote reveal" style="border-left-color:var(--gauge)">Narrator: it was moderately hard, and almost none of the hardness was the physics.</p>
+
+<h2 class="reveal">What I built</h2>
+<p class="reveal">A 2D shallow-water solver — the honest, unglamorous kind: first-order finite volumes, a Rusanov flux with hydrostatic reconstruction so that a lake at rest stays exactly at rest, wet/dry fronts, Manning friction, adaptive timesteps, mass accounted to the last cubic metre. Written in Python with numba, about four hundred lines, no flood-modeling framework underneath. Terrain from the Copernicus 30&nbsp;m global elevation dataset, resampled to 90&nbsp;m. Breach outflow from the Froehlich (2008) empirical equations feeding a weir, plus a nastier variant where a third of the crest simply ceases to exist. Three scenarios: the reservoir at today's permitted 142&nbsp;ft; the same but with the downstream Idukki mega-reservoir failing in cascade; and the full 152&nbsp;ft pool with the instant collapse.</p>
+<p class="reveal">The full methodology, with every equation, bug, and dead end, is in the repo's <a href="docs/JOURNEY.md">JOURNEY.md</a>. Two details matter for what follows.</p>
+<p class="reveal">First: <strong>mass conservation is a ledger, not a hope.</strong> Every run closes its water budget to +0.000%. I mention this because, of all the published studies I later compared against, none reports a volume balance at all, and one of them — we'll get there — quietly loses the plot in other ways.</p>
+<p class="reveal">Second: <strong>the satellite measured the trees.</strong> Copernicus is a <em>surface</em> model. The Periyar below the dam runs through a forested canyon 50–150&nbsp;m wide, and at 90&nbsp;m resolution the canopy closes over it like a lid. My first simulated flood hit a wall of oaks-as-geology, ponded fifty metres deep, and refused to go to the sea. I spent a day performing hydrological surgery — priority-flood depression breaching with an epsilon gradient, which is a real published algorithm and not something I invented in a fugue — to convince the valley it was a valley. Remember this; it is the single largest asterisk on everything below.</p>
+
+<h2 class="reveal">What the water did — now as cinema</h2>
+<p class="reveal">Words first, then the films. In every scenario the breach empties the reservoir down a gorge toward the town of Vandiperiyar, then north into the arms of the Idukki reservoir. What happens next depends entirely on whether you believe Idukki holds.</p>
+
+<figure class="reveal">
+  <video controls muted loop playsinline preload="metadata" poster="outputs/cascade_142/max_depth.png" src="outputs/cascade_142/animation.mp4"></video>
+  <figcaption>cascade_142 · 24 simulated hours in 16 seconds · hillshade + water depth, 90 m grid. watch the breach fill the gorge, hit idukki (the tinted lake), and — because this scenario assumes idukki fails — continue northwest past neriamangalam and unfold across the coastal plain toward kochi.</figcaption>
+</figure>
+
+<div class="clock reveal" id="clock1" aria-label="Animated timeline of flood arrival times in the cascade scenario">
+  <span class="title">the compressed clock · cascade_142 · 24 h → 12 s</span>
+  <button type="button" onclick="runclock()">replay</button>
+  <div class="track">
+    <div class="fill"></div>
+    <div class="mk hit"  style="left:1%"><span><b>0:00</b>breach</span></div>
+    <div class="mk hit up" style="left:7.9%"><span><b>1:53</b>vandiperiyar · 29 m</span></div>
+    <div class="mk hit"  style="left:28.3%"><span><b>6:48</b>idukki</span></div>
+    <div class="mk boom up" style="left:30.2%"><span><b>7:15</b>idukki "fails"</span></div>
+    <div class="mk hit"  style="left:37.4%"><span><b>8:59</b>neriamangalam · 47 m</span></div>
+    <div class="mk hit up" style="left:57.9%"><span><b>13:55</b>kalady · 3.2 m</span></div>
+    <div class="mk hit"  style="left:72.2%"><span><b>17:20</b>aluva · 2.3 m</span></div>
+    <div class="mk hit up" style="left:91.7%"><span><b>22:00</b>varappuzha · rising</span></div>
+  </div>
+</div>
+
+<div class="tablewrap reveal">
+<table>
+<caption>production runs · 90 m grid · 24 h simulated · ledger +0.000% in all three</caption>
+<tr><th></th><th>baseline_142</th><th>cascade_142</th><th>sudden_152</th></tr>
+<tr><td>breach model</td><td>Froehlich (175 m over 2.5 h)</td><td>Froehlich</td><td>⅓ crest, instantaneous</td></tr>
+<tr><td>peak outflow</td><td>50,540 m³/s</td><td>50,540 m³/s</td><td>65,287 m³/s</td></tr>
+<tr><td>Vandiperiyar (6 km)</td><td>1.9 h · 29 m deep</td><td>1.9 h · 29 m</td><td>35 min · 30 m</td></tr>
+<tr><td>surge reaches Idukki</td><td>6.8 h</td><td>6.8 h</td><td>5.1 h</td></tr>
+<tr><td>Idukki reservoir</td><td class="hit">absorbs 297 Mm³, rises 5.2 m</td><td>fails (assumed), releases 1,460 Mm³ at 387,000 m³/s</td><td>same, 1.7 h earlier</td></tr>
+<tr><td>Neriamangalam</td><td>dry</td><td>9.0 h · 47 m</td><td>7.3 h · 47 m</td></tr>
+<tr><td>Kalady</td><td>dry</td><td>13.9 h · 3.2 m</td><td>12.2 h · 3.2 m</td></tr>
+<tr><td>Aluva</td><td>dry</td><td>17.3 h · 2.3 m</td><td>15.7 h · 2.3 m</td></tr>
+<tr><td>Varappuzha</td><td>dry</td><td>22 h · 1.9 m, rising</td><td>20 h · 2.4 m, rising</td></tr>
+</table>
+</div>
+
+<p class="reveal">Three things stopped me cold.</p>
+<p class="reveal"><strong>One: the gorge is unambiguous.</strong> In every scenario, under every assumption I could throw at it, Vandiperiyar — a real town, tea stalls, a bus stand — takes twenty to thirty metres of water within an hour or two. There is no parameter I found that changes this in kind. Anyone using this stretch of valley as a rhetorical football should be made to stare at that number.</p>
+<p class="reveal"><strong>Two: Idukki is the hero of the baseline, and this is under-discussed.</strong> Watch it happen:</p>
+
+<figure class="reveal">
+  <video controls muted loop playsinline preload="metadata" poster="outputs/baseline_142/max_depth.png" src="outputs/baseline_142/animation.mp4"></video>
+  <figcaption>baseline_142 · the entire 380-million-m³ surge from mullaperiyar arrives at idukki… and stops. the great lake swallows it — rising 5.2 m and crossing its own full reservoir level around hour fifteen (spillway assumed closed) — and nothing north of it gets wet at all.</figcaption>
+</figure>
+
+<p class="reveal">If Idukki holds, Kochi's fate is not decided at Mullaperiyar; it is decided at Idukki, by a much bigger, much younger, much better-instrumented dam, and by whether its operators have hours of warning (they would have several) and somewhere to put the water (that's the real question).</p>
+<p class="reveal"><strong>Three: the apocalypse requires a sequel.</strong> The scary maps — the ones reaching Aluva and the backwaters — only happen in the cascade, which requires assuming a modern 168-metre arch dam and its companions fail because their reservoir came up five-ish metres. That is not a small assumption. It is the load-bearing assumption of the entire civilizational-threat narrative, and it usually goes unmentioned in the scary version of the story.</p>
+
+<h2 class="reveal">Then I checked myself against everyone else</h2>
+<div class="tablewrap reveal">
+<table>
+<caption>mine vs published studies · full sourcing in the repo README</caption>
+<tr><th>quantity</th><th>published</th><th>this project</th><th>verdict</th></tr>
+<tr><td>peak breach outflow</td><td>15,405 → 89,121 m³/s (spread across studies: 6×)</td><td>50,540 – 77,397 m³/s</td><td class="hit">inside the (weirdly wide) range</td></tr>
+<tr><td>depth just below dam</td><td>40.3 – 45.3 m</td><td>~40 m</td><td class="hit">match</td></tr>
+<tr><td>Vandiperiyar peak depth</td><td>28.4 m</td><td>29–30 m</td><td class="hit">match, ±5%</td></tr>
+<tr><td>share of volume reaching Idukki</td><td>~85%</td><td>78–81%</td><td class="hit">match</td></tr>
+<tr><td>arrival at Idukki</td><td>122–128 min</td><td>303–410 min</td><td class="miss">2.4–3.4× slower — see below</td></tr>
+<tr><td>Idukki-breach → Aluva travel time</td><td>~9.7 h</td><td>~10.1 h</td><td class="hit">match, ±5%</td></tr>
+<tr><td>cascade depth at Aluva / Ernakulam</td><td>16 m / 7.5 m (1D models)</td><td>2.3 m (2D spreading)</td><td class="miss">structural disagreement — see below</td></tr>
+</table>
+</div>
+<p class="reveal">Where the terrain confines the water, everybody agrees — depths in the gorge match published values within a few percent, which, given that we used different terrain, different decades, and different software, is genuinely reassuring about the physics. The two disagreements are the interesting part, because each one has a lesson in it.</p>
+
+<h2 class="reveal">A respectful complaint about the famous study</h2>
+<p class="reveal">The number that anchors the public discourse — <em>the flood reaches Idukki in about two hours</em> — descends from the IIT Roorkee dam-break analysis, the study most often cited during the 2011 panic. Having now spent days in this problem, I have two observations, offered with the humility of a man whose own model thinks trees are cliffs.</p>
+<p class="reveal"><strong>First, the 12-minute breach.</strong> The study assumes the masonry dam disintegrates, fully, in twelve minutes. The Froehlich regression — fitted to every historical dam failure we have data for — suggests two and a half hours for a reservoir this size. Here is what that one assumption does to the river, drawn from my model's own outflow curves:</p>
+
+<div class="hydro reveal" id="hydro" role="img" aria-label="Two breach hydrographs: Froehlich 151-minute breach peaking at 50,540 cubic metres per second, versus a forced 12-minute breach peaking at 77,397, which empties the reservoir far faster">
+  <svg viewBox="0 0 760 300">
+    <line class="axis" x1="30" y1="250" x2="750" y2="250"/>
+    <line class="axis" x1="30" y1="10"  x2="30"  y2="250"/>
+    <text x="26" y="14" text-anchor="end">80k</text>
+    <text x="26" y="132" text-anchor="end">40k</text>
+    <text x="26" y="253" text-anchor="end">0</text>
+    <text x="30" y="266">0 h</text>
+    <text x="390" y="266" text-anchor="middle">4 h</text>
+    <text x="748" y="266" text-anchor="end">8 h</text>
+    <text x="8" y="150" transform="rotate(-90 8,150)" text-anchor="middle">outflow m³/s</text>
+    <g transform="translate(30,0)">
+      <polyline class="curve fro" points="0,250.0 6,250.0 12,249.8 18,249.6 24,249.1 30,248.5 36,247.6 42,246.5 48,245.1 54,243.4 60,241.5 66,239.3 72,236.7 78,233.9 84,230.7 90,227.2 96,223.5 102,219.4 108,215.0 114,210.4 120,205.5 126,200.3 132,194.9 138,189.2 144,183.4 150,177.4 156,171.2 162,165.0 168,158.6 174,152.1 180,145.7 186,139.2 192,132.8 198,126.5 204,120.3 210,114.3 216,108.4 222,102.9 228,99.4 234,106.2 240,112.8 246,119.1 252,125.1 258,130.9 264,136.5 270,141.9 276,147.0 282,152.0 288,156.8 294,161.3 300,165.7 306,169.9 312,174.0 318,177.8 324,181.5 330,185.1 336,188.5 342,191.8 348,194.9 354,197.9 360,200.8 366,203.5 372,206.1 378,208.7 384,211.1 390,213.3 396,215.5 402,217.6 408,219.6 414,221.5 420,223.3 426,225.0 432,226.7 438,228.2 444,229.7 450,231.1 456,232.4 462,233.7 468,234.9 474,236.0 480,237.1 486,238.1 492,239.1 498,239.9 504,240.8 510,241.6 516,242.3 522,243.0 528,243.7 534,244.3 540,244.8 546,245.4 552,245.8 558,246.3 564,246.7 570,247.1 576,247.4 582,247.8 588,248.0 594,248.3 600,248.6 606,248.8 612,249.0 618,249.1 624,249.3 630,249.4 636,249.5 642,249.6 648,249.7 654,249.8 660,249.8 666,249.9 672,249.9 678,249.9 684,250.0 690,250.0 696,250.0 702,250.0 708,250.0 714,250.0 720,250.0"/>
+      <polyline class="curve tf12" points="0,250.0 6,234.6 12,163.7 18,17.8 24,27.7 30,37.3 36,46.4 42,55.3 48,63.7 54,71.9 60,79.8 66,87.3 72,94.6 78,101.6 84,108.3 90,114.8 96,121.0 102,127.0 108,132.7 114,138.2 120,143.5 126,148.6 132,153.5 138,158.2 144,162.7 150,167.1 156,171.2 162,175.2 168,179.0 174,182.7 180,186.2 186,189.6 192,192.8 198,195.9 204,198.8 210,201.7 216,204.4 222,207.0 228,209.4 234,211.8 240,214.1 246,216.2 252,218.3 258,220.2 264,222.1 270,223.9 276,225.6 282,227.2 288,228.7 294,230.2 300,231.5 306,232.8 312,234.1 318,235.3 324,236.4 330,237.4 336,238.4 342,239.3 348,240.2 354,241.0 360,241.8 366,242.5 372,243.2 378,243.9 384,244.4 390,245.0 396,245.5 402,246.0 408,246.4 414,246.8 420,247.2 426,247.5 432,247.9 438,248.1 444,248.4 450,248.6 456,248.8 462,249.0 468,249.2 474,249.3 480,249.5 486,249.6 492,249.7 498,249.7 504,249.8 510,249.9 516,249.9 522,249.9 528,250.0 534,250.0 540,250.0 546,250.0 552,250.0 558,250.0 564,250.0 570,250.0 576,250.0 582,250.0 588,250.0 594,250.0 600,250.0 606,250.0 612,250.0 618,250.0 624,250.0 630,250.0 636,250.0 642,250.0 648,250.0 654,250.0 660,250.0 666,250.0 672,250.0 678,250.0 684,250.0 690,250.0 696,250.0 702,250.0 708,250.0 714,250.0 720,250.0"/>
+      <text x="215" y="90" fill="#b3372c">12-min breach · peak 77,400</text>
+      <text x="255" y="145" fill="#0f5460">Froehlich (151 min) · peak 50,540</text>
+    </g>
+  </svg>
+  <figcaption style="font-family:var(--mono); font-size:.72rem; color:var(--khaki); margin-top:.4rem">same dam, same 380 Mm³ of water, one changed assumption. the red curve is the famous two-hour flood; the teal one is what the historical-failure regression predicts. both drain the same reservoir — one is simply a much angrier way to say it.</figcaption>
+</div>
+
+<p class="reveal">When I forced my model to use their twelve minutes, my peak outflow jumped to 77,400 m³/s, within 13% of their 89,121, and my arrival times fell by more than half. In other words, <em>most of the famous urgency is an input, not a finding</em>. It's a defensible worst-case input for a dam whose failure mode nobody knows! But headlines converted a stress-test assumption into a physical property of the river, and nobody involved had an incentive to correct them.</p>
+<p class="reveal"><strong>Second, the one-dimensional flood plain.</strong> The published cascades put 16 metres of water at Aluva and 7.5 at Ernakulam. Those come from 1D models, which by construction keep the flood inside a chain of surveyed cross-sections — the water cannot spread sideways, because sideways does not exist. My 2D run lets the same volume unfold across the thirty-kilometre-wide Vembanad plain and gets 2-ish metres. Reality — which contains embankments my terrain can't see, and openness their sections can't represent — is somewhere between. The independent estimates of ~5 m at Varappuzha sit, pleasingly, right in that between.</p>
+<p class="fieldnote reveal">A 6× spread in published peak discharges (15k to 89k m³/s) is itself a finding about the dispute. Each party can cite a peer-reviewed-looking number differing by half an order of magnitude, and both are "the science."</p>
+
+<h2 class="reveal">A disrespectful complaint about my own model</h2>
+<p class="reveal">Fairness demands the same energy pointed inward, so: reasons to distrust me, ranked.</p>
+<p class="reveal"><strong>My terrain is a lie about trees.</strong> The canopy DSM renders a 100-m canyon as a 300-m staircase. I measured what this costs: after granting the critics their 12-minute breach, I'm still ~2.4× slower to Idukki than the surveyed-cross-section studies. I tried to fix it by carving synthetic channels along the river — a graded 20-m trench made things <em>worse</em> (it was flatter than the natural steep reaches, and once undercut the receiving lake by nine metres, creating a moat: pure comedy), and surgical sill-removal bought only 4%. The gap is the data, and no amount of thalweg origami closes it. Someone with lidar of that gorge could; I couldn't.</p>
+<p class="reveal"><strong>My breach is a regression over other people's disasters.</strong> Froehlich 2008 is fitted mostly to earthen dams. Mullaperiyar is composite masonry. Nobody knows how a 130-year-old lime-surkhi gravity section actually lets go, which is simultaneously the reason for the entire dispute and the reason every study of it, mine included, is guessing at the source term.</p>
+<p class="reveal"><strong>My Idukki is a cartoon.</strong> A nominal pool level, spillway assumed closed, dams as solid rectangles, failure triggered by a volume threshold I chose. The real reservoir has operators, gates, rule curves, and a monsoon calendar — all of which matter more than anything in my ledger.</p>
+<p class="reveal"><strong>Assorted sins:</strong> no buildings, no bridges, no embankments, no sediment (real dam-break floods are debris slurries, which travel differently), no tides in the backwaters, towns reduced to their lowest-lying 90-m cell, and the cascade's coastal peak was still rising when my 24-hour clock ran out.</p>
+
+<h2 class="reveal">The independent jury</h2>
+<p class="reveal">Because a man who marks his own homework is just a man with two opinions, I ran the same terrain and the same hydrograph through <strong>LISFLOOD-FP</strong> — the University of Bristol/Sheffield flood model used in a few hundred papers, built from source, with an entirely different numerical heart (local-inertial vs my full shallow-water). It agreed with me to within 5% on arrival and 8% on peak depth at the key gauge, and traced the same flood footprint with an IoU of 0.72 across the whole 180-km cascade path.</p>
+<figure class="reveal">
+  <img src="outputs/comparison_maxdepth.png" alt="Side-by-side maximum depth maps from our solver and LISFLOOD-FP, plus a difference map">
+  <figcaption>baseline · left: my solver · middle: LISFLOOD-FP · right: difference. two independently written engines, one river.</figcaption>
+</figure>
+<div class="tablewrap reveal">
+<table>
+<caption>same terrain, same hydrograph, different physics engines</caption>
+<tr><th>quantity</th><th>mine (full SWE)</th><th>LISFLOOD-FP (inertial)</th></tr>
+<tr><td>Vandiperiyar arrival / peak</td><td>1.87 h / 21.9 m</td><td>1.78 h / 20.1 m</td></tr>
+<tr><td>volume into Idukki basin, 24 h</td><td>208 Mm³</td><td>247 Mm³</td></tr>
+<tr><td>cascade: Kalady arrival / peak</td><td>16.5 h / 5.2 m</td><td>19.3 h / 5.6 m</td></tr>
+<tr><td>cascade: Neriamangalam peak</td><td>50.5 m</td><td>36.3 m (inertial solvers wobble in steep gorges — known)</td></tr>
+<tr><td>volume conservation</td><td>+0.000%</td><td>380 of 380 Mm³ accounted</td></tr>
+</table>
+</div>
+<p class="reveal">(I also spent an absurd evening getting the actual HEC-RAS 2D engines running natively on Linux — the industry's own solver, headless, no Windows — and got 90% of the way before its undocumented geometry format defeated me. Along the way I found and fixed a genuine dangling-pointer bug in LISFLOOD-FP's boundary-condition loader. The flood-modeling software ecosystem is a place.)</p>
+
+<h2 class="reveal">The exhibit for the jury that prefers cinema</h2>
+<p class="reveal">Finally, because a debate this operatic deserves at least one aerial shot: the cascade scenario in three dimensions, viewed from over the Arabian Sea looking east into the Ghats — the vantage point from which the whole system reads at once: the old dam top-right, the gorge, the great lake, and the long run down to the coast.</p>
+<figure class="reveal">
+  <video controls muted loop playsinline preload="metadata" poster="outputs/cascade_142/poster_3d.jpg" src="outputs/cascade_142/animation_3d.mp4"></video>
+  <figcaption>cascade_142 in 3D · 24 h in 23 s · terrain exaggerated 2.5× · camera arcs 45° over the sea. the baseline version — in which idukki simply eats the flood and the lowlands stay green — is in <code>outputs/baseline_142/animation_3d.mp4</code>, and is arguably the more important film.</figcaption>
+</figure>
+
+<h2 class="reveal">So: how much of the dispute is real?</h2>
+<p class="reveal">My best attempt at an honest ledger, after simulating this every way I know how:</p>
+<p class="reveal"><strong>Real:</strong> the gorge. If this dam fails by any mechanism, at any pool level, the Periyar valley from the dam to the Idukki backwater — Vandiperiyar and everything near the channel — is hit fast and catastrophically hard. The people who live there are entitled to take the dispute personally, and the 136-vs-142-vs-152 ft fight changes their outcome by degree, not by kind.</p>
+<p class="reveal"><strong>Conditional:</strong> everything past Idukki. The famous drowned-Kochi maps require the cascade, and the cascade requires a second, much larger, modern dam to fail. That's a scenario worth planning for — cascades are how the worst real dam disasters happened — but it is a <em>compound</em> hypothetical, and honest communication would price it as one. Meanwhile the baseline result quietly reframes the whole thing: Mullaperiyar's surge <em>fits inside Idukki</em>. The most safety-critical object in this story might not be the old dam everyone photographs, but the operating margin of the newer one nobody argues about.</p>
+<p class="reveal"><strong>Inflated, by both sides:</strong> the certainty. One side's two-hour wall of water descends from a twelve-minute breach assumption; the other side's serenity rests on the same absence of knowledge about how old masonry fails, pointed the other way. The published record spans a 6× range in peak discharge and doesn't report volume balances. Sixteen vertical feet of gauge have absorbed decades of litigation that might have been better spent on, say, a lidar survey of the gorge and a public, versioned, reproducible model that both states could argue <em>inside</em> instead of about.</p>
+<p class="reveal">Failing that, there's mine. The repo is public, every number regenerates from four scripts, and the water, at least, has no political affiliation. It just goes downhill.</p>
+
+<div class="disclaimer reveal">
+This is a visualization exercise on satellite terrain with empirical breach guesses — order-of-magnitude at best, biased late on arrival times, and silent on the only question that actually matters: the probability of failure. It is not a hazard map. If you live in the Periyar valley, your district's disaster-management plan outranks every pixel of this. And the dam itself? I have no idea whether it will fail. Neither, I suspect, do the people who sound most certain — in either direction.
+</div>
+
+<footer>
+  simulated 2026-07-06 → 2026-07-10 · v2 with films · solver, data pipeline &amp; full methodology: <a href="docs/JOURNEY.md">docs/JOURNEY.md</a> · scenario reports and all three 2D/3D animations under <code>outputs/</code> · cross-checked against LISFLOOD-FP 8.0.3 · published comparisons: IIT Roorkee (2011), George et&nbsp;al. IRJET 9(7) 2022, IJRASET · Copernicus GLO-30 © ESA · this page renders one author's opinion and 0.000% missing water
+</footer>
+</main>
+
+<script>
+(function(){
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // gauge rail fill
+  var w = document.getElementById('gaugewater');
+  function setGauge(){
+    var h = document.documentElement;
+    var p = h.scrollTop / (h.scrollHeight - h.clientHeight || 1);
+    w.style.height = (10 + p * 68) + '%';
+  }
+  if(reduced){ w.style.height = '44%'; }
+  else { addEventListener('scroll', setGauge, {passive:true}); setGauge(); }
+
+  // scroll reveals
+  var els = document.querySelectorAll('.reveal');
+  if(reduced){ els.forEach(function(e){e.classList.add('in')}); }
+  else{
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target);} });
+    }, {rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){ io.observe(e); });
+  }
+
+  // hydrograph draw-on
+  var hy = document.getElementById('hydro');
+  if(hy){
+    hy.querySelectorAll('.curve').forEach(function(pl){
+      var L = pl.getTotalLength();
+      pl.style.strokeDasharray = L;
+      pl.style.strokeDashoffset = reduced ? 0 : L;
+    });
+    if(!reduced){
+      new IntersectionObserver(function(en, o){
+        if(en[0].isIntersecting){ hy.classList.add('armed'); o.disconnect(); }
+      }, {threshold:.35}).observe(hy);
+    }
+  }
+
+  // compressed clock
+  var clock = document.getElementById('clock1');
+  window.runclock = function(){
+    clock.classList.remove('armed');
+    void clock.offsetWidth;   // reflow to restart the transition
+    clock.classList.add('armed');
+  };
+  if(reduced){ clock.classList.add('armed'); }
+  else{
+    new IntersectionObserver(function(en, o){
+      if(en[0].isIntersecting){ clock.classList.add('armed'); o.disconnect(); }
+    }, {threshold:.5}).observe(clock);
+  }
+})();
+</script>
+</body>
+</html>
