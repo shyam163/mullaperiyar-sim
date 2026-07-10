@@ -101,10 +101,18 @@ def mullaperiyar_spec(pool_ft: int, mode: str) -> BreachSpec:
         vol, head = 443e6, 46.3
     else:
         raise ValueError(pool_ft)
-    return BreachSpec(
+    spec = BreachSpec(
         name=f"mullaperiyar_{pool_ft}ft_{mode}",
         volume_m3=vol, head_m=head, crest_len_m=365.7, mode=mode, k0=1.0,
     )
+    # experiment knob: override the Froehlich formation time (e.g. the
+    # IIT Roorkee study assumed a 12-minute breach)
+    import os
+    tf_min = os.environ.get("MULLA_BREACH_TF_MIN")
+    if tf_min is not None and spec.mode == "froehlich":
+        spec.t_form = float(tf_min) * 60.0
+        spec.name += f"_tf{tf_min}min"
+    return spec
 
 
 def cheruthoni_spec() -> BreachSpec:

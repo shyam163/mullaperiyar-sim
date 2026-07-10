@@ -294,7 +294,66 @@ def build_domain(dem_path, target_volume_m3):
           f"z={z[dom.cheru_rows, dom.cheru_cols].mean():.0f} m")
 
     # ---- Manning roughness: forested gorge above 300 m, plains below
-    dom.n_map = np.where(z > 300.0, 0.06, 0.035)
+    # experiment knob: carve a synthetic channel (one cell wide ~= 100 m,
+    # MULLA_CARVE metres deep) along the steepest-descent path from the
+    # dam to the Idukki basin, compensating the canopy DSM's canyon loss.
+    carve_depth = float(os.environ.get("MULLA_CARVE", 0.0))
+    carved = np.zeros(z.shape, bool)
+    if carve_depth > 0.0:
+        r, c = int(dom.inj_rows[0]), int(dom.inj_cols[0])
+        visited = set()
+        path = []
+        for _ in range(5000):
+            path.append((r, c))
+            visited.add((r, c))
+            if sinkmask[r, c] or z[r, c] < 700.0:
+                break
+            best, bestz = None, 1e18
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    rr, cc2 = r + dr, c + dc
+                    if (dr == 0 and dc == 0) or (rr, cc2) in visited:
+                        continue
+                    if not (0 <= rr < z.shape[0] and 0 <= cc2 < z.shape[1]):
+                        continue
+                    if z[rr, cc2] < bestz:
+                        bestz, best = z[rr, cc2], (rr, cc2)
+            if best is None:
+                break
+            r, c = best
+        cut = [(r, c) for (r, c) in path if not sinkmask[r, c]]
+        mode = os.environ.get("MULLA_CARVE_MODE", "grade")
+        if mode == "sill":
+            # sill removal: bed = running minimum of the DSM along the
+            # thalweg. Cuts only through the spurious canopy sills,
+            # preserves every natural steep drop, adds minimal storage.
+            bed = z[cut[0][0], cut[0][1]]
+            for (r, c) in cut:
+                bed = min(bed, z[r, c])
+                z[r, c] = max(bed, 726.0)
+                carved[r, c] = True
+            print(f"synthetic channel (sill removal): {len(cut)} cells, "
+                  f"end bed {z[cut[-1]]:.0f} m")
+        else:
+            # graded channel: linear profile from (start - carve_depth)
+            # down to the lake entry (726 m) - ~ the river's mean gradient
+            d = np.zeros(len(cut))
+            for k in range(1, len(cut)):
+                d[k] = d[k - 1] + dx * np.hypot(
+                    cut[k][0] - cut[k - 1][0], cut[k][1] - cut[k - 1][1])
+            z0 = z[cut[0]] - carve_depth
+            z1 = 726.0
+            grade = z0 + (z1 - z0) * d / max(d[-1], 1.0)
+            for k, (r, c) in enumerate(cut):
+                z[r, c] = min(z[r, c], grade[k])   # never raise terrain
+                carved[r, c] = True
+            print(f"synthetic channel: {len(cut)} cells, graded "
+                  f"{z0:.0f} -> {z1:.0f} m over {d[-1]/1000:.1f} km "
+                  f"(slope {(z0-z1)/max(d[-1],1):.4f})")
+
+    n_gorge = float(os.environ.get("MULLA_N_GORGE", 0.06))
+    dom.n_map = np.where(z > 300.0, n_gorge, 0.035)
+    dom.n_map[carved] = 0.035   # rock/water channel, not forest
 
     # ---- gauges: snap each town to the lowest cell within 300 m
     snap = int(np.ceil(300.0 / dx))
