@@ -185,6 +185,33 @@ gitignored under `vendor/`). Status:
   export from RAS Mapper on Windows (Workflow A/B), which then re-runs
   natively on Linux - proven with the bundled examples.
 
+## LISFLOOD-FP cross-check (completed)
+
+Since headless HEC-RAS stalled, the independent-solver cross-check was
+done with **LISFLOOD-FP 8.0.3** (Bristol/Sheffield, GPL, built from the
+Zenodo source; local-inertial "acceleration" solver) on the **identical**
+180 m conditioned terrain, identical Froehlich 142 ft hydrograph at the
+same gorge cells, identical Manning map, dry Idukki start. Tooling:
+`src/export_lisflood.py`, `src/lisflood_compare.py`; results in
+`lisflood/comparison.md`.
+
+| quantity | ours (full-SWE Rusanov FV) | LISFLOOD-FP (local inertial) |
+|---|---|---|
+| Vandiperiyar arrival | 1.87 h | 1.78 h |
+| Vandiperiyar peak depth | 21.9 m | 20.1 m |
+| Vandiperiyar time of peak | 4.7 h | 5.2 h |
+| Idukki basin volume at 24 h | 208 Mm³ | 247 Mm³ |
+| Volume conservation | +0.000 % | ~0.09 Mm³ cumulative drift |
+| Wall clock (24 h sim) | 10 s | 93 s |
+
+Two independently-developed engines with different governing-equation
+approximations agree to **~5 % on arrival time and ~8 % on peak depth**
+at the key gorge gauge, and to ~20 % on the volume delivered to Idukki
+(the inertial solver routes slightly faster). This is strong evidence
+that the numbers here are properties of the terrain + hydrograph, not
+artifacts of our solver - while leaving limitation 1 (the canopy-DSM
+terrain itself) fully in force for both.
+
 ## Repository layout
 
 ```

@@ -8,3 +8,4 @@ tests/_chan/
 outputs/qa_*.png
 vendor/
 hecras/
+lisflood/
