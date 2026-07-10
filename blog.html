@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dam, the Dispute, and Me: I Flooded Kerala on a Laptop So You Don't Have To</title>
+<style>
+  :root{
+    --paper:#edf1f0;      /* survey-map wash */
+    --ink:#1c2b33;        /* drawing ink */
+    --teal:#0f5460;       /* reservoir */
+    --gauge:#b3372c;      /* the red line on a gauge chart */
+    --khaki:#79715f;      /* field-note pencil */
+    --card:#f6f8f7;
+    --rule:#c9d2d0;
+    --mono:"SF Mono","Cascadia Code",Consolas,"DejaVu Sans Mono",monospace;
+    --serif:"Palatino Linotype","Book Antiqua",Palatino,P052,Georgia,serif;
+    --body:Charter,Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); font-size:1.06rem; line-height:1.72;
+  }
+  /* ---------- the gauge rail (signature) ---------- */
+  #gauge{
+    position:fixed; left:0; top:0; bottom:0; width:64px;
+    border-right:1px solid var(--rule); background:var(--card);
+    font-family:var(--mono); font-size:.62rem; color:var(--khaki);
+    z-index:5; user-select:none;
+  }
+  #gauge .water{
+    position:absolute; left:0; right:0; bottom:0; height:0%;
+    background:linear-gradient(180deg, rgba(15,84,96,.28), rgba(15,84,96,.45));
+    transition:height .1s linear;
+  }
+  @media (prefers-reduced-motion: reduce){ #gauge .water{transition:none} }
+  #gauge .tick{position:absolute; left:0; right:0; border-top:1px solid var(--rule); padding:1px 4px}
+  #gauge .tick b{font-weight:600; color:var(--ink)}
+  #gauge .tick.danger{border-top:2px solid var(--gauge); color:var(--gauge)}
+  #gauge .tick.danger b{color:var(--gauge)}
+  #gauge .lbl{position:absolute; top:8px; left:0; right:0; text-align:center; letter-spacing:.12em}
+  @media(max-width:1080px){ #gauge{display:none} }
+
+  main{max-width:46rem; margin:0 auto; padding:0 1.4rem 6rem}
+  @media(min-width:1080px){ main{margin-left:calc(50% - 23rem + 32px)} }
+
+  header.hero{padding:5rem 0 2.5rem; border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono); font-size:.72rem; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--khaki); margin:0 0 1rem}
+  h1{font-family:var(--serif); font-weight:700; font-size:clamp(2rem,5vw,3.1rem);
+    line-height:1.12; margin:.2rem 0 1rem; letter-spacing:-.01em}
+  .dek{font-size:1.16rem; color:var(--teal); font-style:italic; margin:0}
+  .byline{font-family:var(--mono); font-size:.75rem; color:var(--khaki); margin-top:1.4rem}
+
+  h2{font-family:var(--serif); font-size:1.55rem; line-height:1.25; margin:3rem 0 .8rem;}
+  h2 .no{color:var(--gauge); font-family:var(--mono); font-size:.8rem; vertical-align:.5em; letter-spacing:.1em; margin-right:.5em}
+  p{margin:0 0 1.1rem}
+  a{color:var(--teal)}
+  strong{color:var(--ink)}
+  .fieldnote{
+    border-left:3px solid var(--khaki); background:var(--card);
+    padding:.7rem 1rem; margin:1.4rem 0; font-size:.94rem; color:#4c4a42;
+  }
+  .fieldnote::before{content:"field note"; display:block; font-family:var(--mono);
+    font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--khaki); margin-bottom:.25rem}
+  .disclaimer{
+    border:2px solid var(--gauge); background:#fbf3f2; padding:1rem 1.2rem;
+    margin:2rem 0; font-size:.95rem;
+  }
+  .disclaimer::before{content:"the red line"; font-family:var(--mono); font-size:.62rem;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--gauge); display:block; margin-bottom:.3rem}
+
+  figure{margin:1.8rem 0}
+  figure img{width:100%; height:auto; border:1px solid var(--rule); background:#fff}
+  figcaption{font-family:var(--mono); font-size:.72rem; color:var(--khaki); margin-top:.45rem; line-height:1.5}
+
+  .tablewrap{overflow-x:auto; margin:1.6rem 0}
+  table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:.78rem; line-height:1.45}
+  caption{font-family:var(--mono); font-size:.7rem; text-align:left; color:var(--khaki);
+    letter-spacing:.12em; text-transform:uppercase; padding-bottom:.5rem}
+  th{border-bottom:2px solid var(--ink); text-align:left; padding:.4rem .6rem .3rem 0; font-weight:600}
+  td{border-bottom:1px solid var(--rule); padding:.38rem .6rem .38rem 0; vertical-align:top}
+  td.hit{color:var(--teal); font-weight:600}
+  td.miss{color:var(--gauge)}
+  tr:hover td{background:rgba(15,84,96,.05)}
+
+  footer{margin-top:4rem; padding-top:1.2rem; border-top:2px solid var(--ink);
+    font-family:var(--mono); font-size:.72rem; color:var(--khaki); line-height:1.7}
+  ::selection{background:rgba(15,84,96,.25)}
+</style>
+</head>
+<body>
+
+<aside id="gauge" aria-hidden="true">
+  <div class="water" id="gaugewater"></div>
+  <div class="lbl">GAUGE<br>(ft)</div>
+  <!-- ticks placed top→bottom: 160 down to 120 -->
+  <div class="tick"        style="top:12%">160</div>
+  <div class="tick danger" style="top:26%"><b>152</b> FRL</div>
+  <div class="tick"        style="top:44%"><b>142</b> now</div>
+  <div class="tick"        style="top:55%"><b>136</b> '79</div>
+  <div class="tick"        style="top:72%">120</div>
+  <div class="tick"        style="top:90%">104</div>
+</aside>
+
+<main>
+<header class="hero">
+  <p class="eyebrow">a simulation diary · periyar river · idukki, kerala</p>
+  <h1>The Dam, the Dispute, and Me</h1>
+  <p class="dek">In which I get tired of not knowing whether a 130-year-old dam is a civilizational threat or a talking point, and decide to flood Kerala on my own laptop, carefully, several times.</p>
+  <p class="byline">≈ 20 min read · every number in this post is reproducible from the repo · none of it is engineering advice</p>
+</header>
+
+<h2>The argument that is older than everyone arguing it</h2>
+<p>There is a dam in the Western Ghats that was finished in 1895, built from lime-surkhi masonry by British engineers, on a lease signed in 1886 that runs for <em>nine hundred and ninety-nine years</em>. Everyone involved in signing it is extremely dead. The dam sits in Kerala, is operated by Tamil Nadu, and holds back the Periyar river so its water can be sent the other way, east, through a tunnel, to irrigate land the river never intended to visit. This arrangement has been in court, on and off, longer than most countries have existed in their current form.</p>
+<p>The dispute has a shape you already know. Kerala, which lives downstream, says the dam is a geriatric time bomb and cites 3.5 million people in the flood path. Tamil Nadu, which lives off the water, says the dam is fine, strengthened, inspected, and that the panic is theatre. The Supreme Court has weighed in more than once, and the number everyone fights over is a mark on a gauge: whether the reservoir may stand at <strong>136, 142, or 152 feet</strong>. Entire election cycles have metabolized those sixteen feet.</p>
+<p>Here is my problem: both sides are running an incentive structure that rewards exaggeration. Downstream, fear is mobilizing. Upstream, reassurance is existential. Somewhere underneath the affidavits there is an actual physical question — <em>if this dam failed, what would the water actually do?</em> — and it felt increasingly deranged to me that I was forming opinions about it from headlines. I have a laptop. Water obeys equations. The equations are public. The terrain has been measured from orbit. How hard could it be?</p>
+<p class="fieldnote" style="border-left-color:var(--gauge)">Narrator: it was moderately hard, and almost none of the hardness was the physics.</p>
+
+<h2>What I built</h2>
+<p>A 2D shallow-water solver — the honest, unglamorous kind: first-order finite volumes, a Rusanov flux with hydrostatic reconstruction so that a lake at rest stays exactly at rest, wet/dry fronts, Manning friction, adaptive timesteps, mass accounted to the last cubic metre. Written in Python with numba, about four hundred lines, no flood-modeling framework underneath. Terrain from the Copernicus 30&nbsp;m global elevation dataset, resampled to 90&nbsp;m. Breach outflow from the Froehlich (2008) empirical equations feeding a weir, plus a nastier variant where a third of the crest simply ceases to exist. Three scenarios: the reservoir at today's permitted 142&nbsp;ft; the same but with the downstream Idukki mega-reservoir failing in cascade; and the full 152&nbsp;ft pool with the instant collapse.</p>
+<p>The full methodology, with every equation, bug, and dead end, is in the repo's <a href="docs/JOURNEY.md">JOURNEY.md</a>. Two details matter for what follows.</p>
+<p>First: <strong>mass conservation is a ledger, not a hope.</strong> Every run closes its water budget to +0.000%. I mention this because, of all the published studies I later compared against, none reports a volume balance at all, and one of them — we'll get there — quietly loses the plot in other ways.</p>
+<p>Second: <strong>the satellite measured the trees.</strong> Copernicus is a <em>surface</em> model. The Periyar below the dam runs through a forested canyon 50–150&nbsp;m wide, and at 90&nbsp;m resolution the canopy closes over it like a lid. My first simulated flood hit a wall of oaks-as-geology, ponded fifty metres deep, and refused to go to the sea. I spent a day performing hydrological surgery — priority-flood depression breaching with an epsilon gradient, which is a real published algorithm and not something I invented in a fugue — to convince the valley it was a valley. Remember this; it is the single largest asterisk on everything below.</p>
+
+<h2>What the water did</h2>
+<figure>
+  <img src="outputs/cascade_142/max_depth.png" alt="Maximum flood depth map for the cascade scenario, showing the flood path from Mullaperiyar dam through the gorge, into Idukki reservoir, and across the coastal plain to the sea">
+  <figcaption>cascade_142 · maximum depth over 24 h · the whole argument in one picture: gorge (deep, fast, narrow) → Idukki reservoir (the plot twist) → coastal plain (wide, shallow, slow)</figcaption>
+</figure>
+<div class="tablewrap">
+<table>
+<caption>production runs · 90 m grid · 24 h simulated · ledger +0.000% in all three</caption>
+<tr><th></th><th>baseline_142</th><th>cascade_142</th><th>sudden_152</th></tr>
+<tr><td>breach model</td><td>Froehlich (175 m over 2.5 h)</td><td>Froehlich</td><td>⅓ crest, instantaneous</td></tr>
+<tr><td>peak outflow</td><td>50,540 m³/s</td><td>50,540 m³/s</td><td>65,287 m³/s</td></tr>
+<tr><td>Vandiperiyar (6 km)</td><td>1.9 h · 29 m deep</td><td>1.9 h · 29 m</td><td>35 min · 30 m</td></tr>
+<tr><td>surge reaches Idukki</td><td>6.8 h</td><td>6.8 h</td><td>5.1 h</td></tr>
+<tr><td>Idukki reservoir</td><td class="hit">absorbs 297 Mm³, rises 5.2 m</td><td>fails (assumed), releases 1,460 Mm³ at 387,000 m³/s</td><td>same, 1.7 h earlier</td></tr>
+<tr><td>Neriamangalam</td><td>dry</td><td>9.0 h · 47 m</td><td>7.3 h · 47 m</td></tr>
+<tr><td>Kalady</td><td>dry</td><td>13.9 h · 3.2 m</td><td>12.2 h · 3.2 m</td></tr>
+<tr><td>Aluva</td><td>dry</td><td>17.3 h · 2.3 m</td><td>15.7 h · 2.3 m</td></tr>
+<tr><td>Varappuzha</td><td>dry</td><td>22 h · 1.9 m, rising</td><td>20 h · 2.4 m, rising</td></tr>
+</table>
+</div>
+<p>Three things stopped me cold.</p>
+<p><strong>One: the gorge is unambiguous.</strong> In every scenario, under every assumption I could throw at it, Vandiperiyar — a real town, tea stalls, a bus stand — takes twenty to thirty metres of water within an hour or two. There is no parameter I found that changes this in kind. Anyone using this stretch of valley as a rhetorical football should be made to stare at that number.</p>
+<p><strong>Two: Idukki is the hero of the baseline, and this is under-discussed.</strong> The entire 380-million-cubic-metre surge from Mullaperiyar fits inside Idukki's flood cushion. In my run — spillway assumed closed, worst-case bookkeeping — the great lake rises 5.2 m and crosses its own Full Reservoir Level around hour fifteen. If Idukki holds, <em>nothing north of it gets wet at all</em>. Kochi's fate is not decided at Mullaperiyar; it is decided at Idukki, by a much bigger, much younger, much better-instrumented dam, and by whether its operators have hours of warning (they would have several) and somewhere to put the water (that's the real question).</p>
+<p><strong>Three: the apocalypse requires a sequel.</strong> The scary maps — the ones reaching Aluva and the backwaters — only happen in the cascade, which requires assuming a modern 168-metre arch dam and its companions fail because their reservoir came up five-ish metres. That is not a small assumption. It is the load-bearing assumption of the entire civilizational-threat narrative, and it usually goes unmentioned in the scary version of the story.</p>
+
+<h2>Then I checked myself against everyone else</h2>
+<div class="tablewrap">
+<table>
+<caption>mine vs published studies · full sourcing in the repo README</caption>
+<tr><th>quantity</th><th>published</th><th>this project</th><th>verdict</th></tr>
+<tr><td>peak breach outflow</td><td>15,405 → 89,121 m³/s (spread across studies: 6×)</td><td>50,540 – 77,397 m³/s</td><td class="hit">inside the (weirdly wide) range</td></tr>
+<tr><td>depth just below dam</td><td>40.3 – 45.3 m</td><td>~40 m</td><td class="hit">match</td></tr>
+<tr><td>Vandiperiyar peak depth</td><td>28.4 m</td><td>29–30 m</td><td class="hit">match, ±5%</td></tr>
+<tr><td>share of volume reaching Idukki</td><td>~85%</td><td>78–81%</td><td class="hit">match</td></tr>
+<tr><td>arrival at Idukki</td><td>122–128 min</td><td>303–410 min</td><td class="miss">2.4–3.4× slower — see below</td></tr>
+<tr><td>Idukki-breach → Aluva travel time</td><td>~9.7 h</td><td>~10.1 h</td><td class="hit">match, ±5%</td></tr>
+<tr><td>cascade depth at Aluva / Ernakulam</td><td>16 m / 7.5 m (1D models)</td><td>2.3 m (2D spreading)</td><td class="miss">structural disagreement — see below</td></tr>
+</table>
+</div>
+<p>Where the terrain confines the water, everybody agrees — depths in the gorge match published values within a few percent, which, given that we used different terrain, different decades, and different software, is genuinely reassuring about the physics. The two disagreements are the interesting part, because each one has a lesson in it.</p>
+
+<h2>A respectful complaint about the famous study</h2>
+<p>The number that anchors the public discourse — <em>the flood reaches Idukki in about two hours</em> — descends from the IIT Roorkee dam-break analysis, the study most often cited during the 2011 panic. Having now spent days in this problem, I have two observations, offered with the humility of a man whose own model thinks trees are cliffs.</p>
+<p><strong>First, the 12-minute breach.</strong> The study assumes the masonry dam disintegrates, fully, in twelve minutes. The Froehlich regression — fitted to every historical dam failure we have data for — suggests two and a half hours for a reservoir this size. When I forced my model to use their twelve minutes, my peak outflow jumped to 77,400 m³/s, within 13% of their 89,121, and my arrival times fell by more than half. In other words, <em>most of the famous urgency is an input, not a finding</em>. It's a defensible worst-case input for a dam whose failure mode nobody knows! But headlines converted a stress-test assumption into a physical property of the river, and nobody involved had an incentive to correct them.</p>
+<p><strong>Second, the one-dimensional flood plain.</strong> The published cascades put 16 metres of water at Aluva and 7.5 at Ernakulam. Those come from 1D models, which by construction keep the flood inside a chain of surveyed cross-sections — the water cannot spread sideways, because sideways does not exist. My 2D run lets the same volume unfold across the thirty-kilometre-wide Vembanad plain and gets 2-ish metres. Reality — which contains embankments my terrain can't see, and openness their sections can't represent — is somewhere between. The independent estimates of ~5 m at Varappuzha sit, pleasingly, right in that between.</p>
+<p class="fieldnote">A 6× spread in published peak discharges (15k to 89k m³/s) is itself a finding about the dispute. Each party can cite a peer-reviewed-looking number differing by half an order of magnitude, and both are "the science."</p>
+
+<h2>A disrespectful complaint about my own model</h2>
+<p>Fairness demands the same energy pointed inward, so: reasons to distrust me, ranked.</p>
+<p><strong>My terrain is a lie about trees.</strong> The canopy DSM renders a 100-m canyon as a 300-m staircase. I measured what this costs: after granting the critics their 12-minute breach, I'm still ~2.4× slower to Idukki than the surveyed-cross-section studies. I tried to fix it by carving synthetic channels along the river — a graded 20-m trench made things <em>worse</em> (it was flatter than the natural steep reaches, and once undercut the receiving lake by nine metres, creating a moat: pure comedy), and surgical sill-removal bought only 4%. The gap is the data, and no amount of thalweg origami closes it. Someone with lidar of that gorge could; I couldn't.</p>
+<p><strong>My breach is a regression over other people's disasters.</strong> Froehlich 2008 is fitted mostly to earthen dams. Mullaperiyar is composite masonry. Nobody knows how a 130-year-old lime-surkhi gravity section actually lets go, which is simultaneously the reason for the entire dispute and the reason every study of it, mine included, is guessing at the source term.</p>
+<p><strong>My Idukki is a cartoon.</strong> A nominal pool level, spillway assumed closed, dams as solid rectangles, failure triggered by a volume threshold I chose. The real reservoir has operators, gates, rule curves, and a monsoon calendar — all of which matter more than anything in my ledger.</p>
+<p><strong>Assorted sins:</strong> no buildings, no bridges, no embankments, no sediment (real dam-break floods are debris slurries, which travel differently), no tides in the backwaters, towns reduced to their lowest-lying 90-m cell, and the cascade's coastal peak was still rising when my 24-hour clock ran out.</p>
+
+<h2>The independent jury</h2>
+<p>Because a man who marks his own homework is just a man with two opinions, I ran the same terrain and the same hydrograph through <strong>LISFLOOD-FP</strong> — the University of Bristol/Sheffield flood model used in a few hundred papers, built from source, with an entirely different numerical heart (local-inertial vs my full shallow-water). It agreed with me to within 5% on arrival and 8% on peak depth at the key gauge, and traced the same flood footprint with an IoU of 0.72 across the whole 180-km cascade path.</p>
+<figure>
+  <img src="outputs/comparison_maxdepth.png" alt="Side-by-side maximum depth maps from our solver and LISFLOOD-FP, plus a difference map">
+  <figcaption>baseline · left: my solver · middle: LISFLOOD-FP · right: difference. two independently written engines, one river.</figcaption>
+</figure>
+<div class="tablewrap">
+<table>
+<caption>same terrain, same hydrograph, different physics engines</caption>
+<tr><th>quantity</th><th>mine (full SWE)</th><th>LISFLOOD-FP (inertial)</th></tr>
+<tr><td>Vandiperiyar arrival / peak</td><td>1.87 h / 21.9 m</td><td>1.78 h / 20.1 m</td></tr>
+<tr><td>volume into Idukki basin, 24 h</td><td>208 Mm³</td><td>247 Mm³</td></tr>
+<tr><td>cascade: Kalady arrival / peak</td><td>16.5 h / 5.2 m</td><td>19.3 h / 5.6 m</td></tr>
+<tr><td>cascade: Neriamangalam peak</td><td>50.5 m</td><td>36.3 m (inertial solvers wobble in steep gorges — known)</td></tr>
+<tr><td>volume conservation</td><td>+0.000%</td><td>380 of 380 Mm³ accounted</td></tr>
+</table>
+</div>
+<p>(I also spent an absurd evening getting the actual HEC-RAS 2D engines running natively on Linux — the industry's own solver, headless, no Windows — and got 90% of the way before its undocumented geometry format defeated me. Along the way I found and fixed a genuine dangling-pointer bug in LISFLOOD-FP's boundary-condition loader. The flood-modeling software ecosystem is a place.)</p>
+
+<h2>So: how much of the dispute is real?</h2>
+<p>My best attempt at an honest ledger, after simulating this every way I know how:</p>
+<p><strong>Real:</strong> the gorge. If this dam fails by any mechanism, at any pool level, the Periyar valley from the dam to the Idukki backwater — Vandiperiyar and everything near the channel — is hit fast and catastrophically hard. The people who live there are entitled to take the dispute personally, and the 136-vs-142-vs-152 ft fight changes their outcome by degree, not by kind.</p>
+<p><strong>Conditional:</strong> everything past Idukki. The famous drowned-Kochi maps require the cascade, and the cascade requires a second, much larger, modern dam to fail. That's a scenario worth planning for — cascades are how the worst real dam disasters happened — but it is a <em>compound</em> hypothetical, and honest communication would price it as one. Meanwhile the baseline result quietly reframes the whole thing: Mullaperiyar's surge <em>fits inside Idukki</em>. The most safety-critical object in this story might not be the old dam everyone photographs, but the operating margin of the newer one nobody argues about.</p>
+<p><strong>Inflated, by both sides:</strong> the certainty. One side's two-hour wall of water descends from a twelve-minute breach assumption; the other side's serenity rests on the same absence of knowledge about how old masonry fails, pointed the other way. The published record spans a 6× range in peak discharge and doesn't report volume balances. Sixteen vertical feet of gauge have absorbed decades of litigation that might have been better spent on, say, a lidar survey of the gorge and a public, versioned, reproducible model that both states could argue <em>inside</em> instead of about.</p>
+<p>Failing that, there's mine. The repo is public, every number regenerates from four scripts, and the water, at least, has no political affiliation. It just goes downhill.</p>
+
+<div class="disclaimer">
+This is a visualization exercise on satellite terrain with empirical breach guesses — order-of-magnitude at best, biased late on arrival times, and silent on the only question that actually matters: the probability of failure. It is not a hazard map. If you live in the Periyar valley, your district's disaster-management plan outranks every pixel of this. And the dam itself? I have no idea whether it will fail. Neither, I suspect, do the people who sound most certain — in either direction.
+</div>
+
+<footer>
+  simulated 2026-07-06 → 2026-07-10 · solver, data pipeline &amp; full methodology: <a href="docs/JOURNEY.md">docs/JOURNEY.md</a> · scenario reports under <code>outputs/</code> · cross-checked against LISFLOOD-FP 8.0.3 · published comparisons: IIT Roorkee (2011), George et&nbsp;al. IRJET 9(7) 2022, IJRASET · Copernicus GLO-30 © ESA · this page renders one author's opinion and 0.000% missing water
+</footer>
+</main>
+
+<script>
+(function(){
+  var w = document.getElementById('gaugewater');
+  if(!w) return;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function set(){
+    var h = document.documentElement;
+    var p = h.scrollTop / (h.scrollHeight - h.clientHeight || 1);
+    // reservoir fills as you read: from 120ft-ish to just past the FRL line
+    w.style.height = (10 + p * 68) + '%';
+  }
+  if(reduced){ w.style.height = '44%'; return; }
+  addEventListener('scroll', set, {passive:true}); set();
+})();
+</script>
+</body>
+</html>
