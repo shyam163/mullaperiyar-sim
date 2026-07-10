@@ -146,6 +146,31 @@ with 1D channel models — reality likely sits between the two. The
 IIT Roorkee 12-minute breach at 30–45 km/h wave speed is itself an
 aggressive worst-case assumption, not a measurement.
 
+### Why our arrival times are slower - sensitivity experiments
+
+The arrival-time gap vs the published studies was decomposed empirically
+(all runs 90 m, baseline_142 configuration unless noted; knobs:
+`MULLA_BREACH_TF_MIN`, `MULLA_N_GORGE`, `MULLA_CARVE`/`MULLA_CARVE_MODE`):
+
+| run | Vandiperiyar | Idukki arrival | peak Q |
+|---|---|---|---|
+| baseline (Froehlich tf = 151 min) | 111 min | 410 min | 50,540 m³/s |
+| breach forced to **12 min** (IIT-R assumption) | 41 min | 316 min | 77,397 m³/s |
+| 12 min + graded 20 m channel along thalweg | 45 min | 387 min | " |
+| 12 min + **sill-removal** channel (running-min bed) | 40 min | 303 min | " |
+| sudden_152 with channel-like n = 0.04 | 32 min | 278 min | 65,287 m³/s |
+| published (12-min breach, surveyed canyon) | 25 min | 122-128 min | 89,121 m³/s |
+
+Findings: **the breach formation time is the dominant lever** (~60 % of
+the gap at Idukki, ~85 % at Vandiperiyar); roughness is worth ~10 %;
+and synthetic channel surgery at 90 m yields diminishing-to-negative
+returns - a graded 20 m trench is *slower* than no channel because its
+uniform 0.0029 gradient is flatter than the natural steep reaches
+between sills, while pure sill removal gains only ~4 %. The residual
+~2.4x is the canopy-DSM valley itself (wide, stepped, without the real
+~100 m canyon), which no single-thalweg edit recovers. Reality most
+likely sits between our sudden-breach numbers and the published ones.
+
 On Idukki in `baseline_142`, the pool rise is now *simulated* rather than
 inferred: ~297 Mm³ impounds behind the closed dams and the mid-lake gauge
 rises **~5.2 m** (nominal 730 → ~735 m ASL), crossing FRL 732.6 m around
