@@ -1,0 +1,221 @@
+# "I Flooded Kerala on My PC" — 6-minute video script
+
+Narration ≈ 900 words ≈ 6:00 at a relaxed 150 wpm. All visuals reference
+real files in the repo. VO = voiceover. Text on screen in [brackets].
+
+---
+
+## 0:00 – 0:38 · COLD OPEN — the scary version
+
+**VISUAL:** Black. One second of silence. Then straight into
+`outputs/cascade_142/animation_3d.mp4` (the sea-view 3D film), full screen,
+low ominous drone under it. As the flood spreads across the coastal plain,
+timestamp overlay ticking.
+
+**VO:**
+This is a simulation of the Mullaperiyar dam failing. The gorge fills in
+under an hour. By hour nine there's a forty-metre wave at Neriamangalam. By
+hour twenty-two, the water is walking into the suburbs of Kochi.
+
+**VISUAL:** Freeze frame at the widest flood extent. Stamp across it:
+[THIS IS THE VERSION EVERYONE SHOWS YOU]
+
+**VO:**
+It's real physics. I computed it myself. And it is — quietly, crucially —
+built on an assumption almost nobody mentions. Stay till the end, because
+the honest version of this story is stranger than the scary one.
+
+---
+
+## 0:38 – 1:15 · THE SETUP — why I did this
+
+**VISUAL:** Old survey-map aesthetic (the blog's gauge graphic works —
+screen-record the page). Quick cuts: the dam (archival photo), a gauge with
+136 / 142 / 152 ft marked, a newspaper headline montage.
+
+**VO:**
+Quick background. The Mullaperiyar dam is a hundred and thirty years old,
+made of lime-surkhi masonry, sits in Kerala, is operated by Tamil Nadu, on
+a lease signed in 1886 — for nine hundred and ninety-nine years. Kerala
+says it's a time bomb upstream of three and a half million people. Tamil
+Nadu says it's fine. The Supreme Court referees a fight over sixteen
+vertical feet of water level.
+
+**VISUAL:** Cut to a table with three glasses. [drinks with Hemant, Kiran
+and Amit]
+
+**VO:**
+What tipped me over was drinks with friends. Hemant was worried — the
+Kerala press was in full Kochi-underwater mode. I didn't think it was that
+serious. Everything traced back to one famous study, and the study looked
+thinner than its reputation. So — why not simulate it myself?
+
+---
+
+## 1:15 – 1:55 · THE BUILD — sixty seconds of method
+
+**VISUAL:** Fast montage: Copernicus tiles downloading (terminal), the
+hillshaded DEM (`outputs/*/max_depth.png` background layer), code scrolling
+(solver.py), the smoke-test output "ALL SMOKE TESTS PASSED", the mass
+ledger line "+0.000%".
+
+**VO:**
+The recipe: real terrain, measured from orbit at thirty metres. A
+shallow-water solver I wrote from scratch — four hundred lines, every cubic
+metre of water accounted for, to zero point zero zero zero percent. And a
+breach model from the standard engineering regression — Froehlich
+2008, fitted to every historical dam failure we have data for.
+
+**VISUAL:** The canopy problem: zoom into the gorge on the DEM, overlay
+[the satellite measured the TREES].
+
+**VO:**
+One catch: the satellite measured the treetops. The Periyar's canyon is
+covered in forest, so my first flood hit a wall of oaks-as-geology and
+refused to move. A day of terrain surgery later, the valley agreed to be a
+valley. Remember that — it matters at the end.
+
+---
+
+## 1:55 – 2:55 · THE REALISTIC RUN — and the plot twist
+
+**VISUAL:** `outputs/baseline_142/animation.mp4` (2D film) full screen.
+Pause at Vandiperiyar as the gorge fills; cut to the town gauge readout.
+
+**VO:**
+Here's the realistic scenario: today's permitted water level, the
+standard breach. First — and I want to say this without any irony — the
+gorge is not okay. Vandiperiyar, a real town, takes twenty to thirty
+metres of water within an hour or two, in every scenario, under every
+assumption. For the people in that valley this dispute isn't abstract.
+It's how much warning their families would get.
+
+**VISUAL:** The film continues: the surge slides north into the Idukki
+arms… and stops. Hold. Cut to `outputs/baseline_142/animation_3d.mp4`,
+the "nothing reaches the coast" film. On screen: [+5.2 m … and it holds]
+
+**VO:**
+Then, the plot twist. The entire flood — three hundred and eighty million
+cubic metres — arrives at the Idukki reservoir. And fits. The great lake
+rises about five metres and holds all of it. In the realistic scenario,
+nothing north of Idukki gets wet at all. The apocalypse you saw at the
+start requires a sequel: a second, much larger, modern dam has to fail
+too. That's the assumption nobody mentions.
+
+---
+
+## 2:55 – 3:45 · "MY MODEL IS TOO POLITE" — matching the famous study
+
+**VISUAL:** Split screen: my arrival times vs published. Numbers in mono
+font. [them: Idukki in ~2 h · me: ~7 h]
+
+**VO:**
+Now the self-audit. The famous IIT Roorkee study gets the flood to Idukki
+in about two hours. Mine takes seven. Someone's wrong — so I checked who.
+It turns out their headline number rests on one input: the dam is assumed
+to disintegrate, completely, in twelve minutes. The historical regression
+says two and a half hours.
+
+**VISUAL:** The blog's animated hydrograph (screen-record it drawing):
+teal Froehlich curve, then the red 12-minute spike. [same water, angrier
+assumption]
+
+**VO:**
+So I gave my model their assumption. Peak outflow jumped fifty percent —
+to within thirteen percent of their number. Arrival times fell by more
+than half. Most of the famous urgency isn't a finding. It's an input.
+
+---
+
+## 3:45 – 4:25 · DIGGING A RIVER — the experiment that backfired
+
+**VISUAL:** Terminal montage of the carve runs; the arrival-profile table;
+a diagram of the trench undercutting the lake (simple animated sketch).
+[experiment: carve a 100 m channel]
+
+**VO:**
+The rest of the gap is my terrain — remember the trees? So I tried to fix
+it: I carved a synthetic hundred-metre channel along the river. First
+attempt dug the channel nine metres below the lake it was supposed to
+enter, and built a moat. The second was hydraulically flatter than the
+valley it replaced and made the flood slower. The only version that
+helped, helped by four percent. Lesson: you cannot origami your way out of
+bad terrain data. Someone should lidar that gorge. Until then, the truth
+sits between my seven hours and their two.
+
+---
+
+## 4:25 – 4:55 · THE INDEPENDENT JURY
+
+**VISUAL:** `outputs/comparison_maxdepth.png` — the three-panel
+mine-vs-LISFLOOD figure. Then a quick stat card:
+[two engines · same river · arrival within 5%]
+
+**VO:**
+Am I just marking my own homework? I re-ran everything through
+LISFLOOD-FP — the academic flood model used in hundreds of papers, built
+from source, completely different numerics. It agreed with me within five
+percent. Meanwhile the published studies of this dam disagree with each
+other by a factor of six. That spread — that's the dispute, in one number.
+
+---
+
+## 4:55 – 5:50 · CONCLUSION — the honest ledger
+
+**VISUAL:** Three title cards over slow pans of the max-depth maps.
+
+**VO:**
+So, after flooding Kerala a few dozen times, here's my ledger.
+
+**VISUAL:** [REAL] over the gorge map.
+
+**VO:**
+Real: the gorge. Every version of this failure devastates the valley below
+the dam, fast. Their safety should be the fixed point of this argument —
+not a bargaining chip inside it.
+
+**VISUAL:** [CONDITIONAL] over the cascade map.
+
+**VO:**
+Conditional: drowned Kochi. It requires the cascade, and the cascade
+requires a modern arch dam to fail because its reservoir rose five metres.
+Possible? Worth planning for. But it's a compound hypothetical — and the
+most safety-critical object in this story might actually be Idukki's
+operating margin, not the old dam everyone photographs.
+
+**VISUAL:** [INFLATED] over the two hydrograph curves.
+
+**VO:**
+Inflated: the certainty — on both sides. One side's two-hour wall of water
+is a twelve-minute assumption. The other side's serenity leans on the same
+missing knowledge, pointed the other way. Nobody knows how a
+hundred-thirty-year-old masonry dam actually fails. That's the whole
+dispute.
+
+---
+
+## 5:50 – 6:00 · OUTRO
+
+**VISUAL:** The blog page scrolling slowly; the gauge fills. End card:
+[blog.quantumautomata.in · github.com/shyam163/mullaperiyar-sim ·
+not a hazard map. not engineering advice.]
+
+**VO:**
+Everything's reproducible — solver, data, every number — links below. And
+if you live in that valley: your district's disaster plan outranks every
+pixel of mine. The water, at least, has no politics. It just goes
+downhill.
+
+---
+
+### Production notes
+- Total VO ≈ 900 words → ~6:00 at 150 wpm; trim the build section first
+  if running long.
+- Register: dry, first-person, one sincere drop at Vandiperiyar and again
+  at [REAL] — no music under those two beats.
+- All sim footage exists: `outputs/{cascade_142,baseline_142}/animation.mp4`
+  and `animation_3d.mp4`; maps in the same folders; LISFLOOD figure at
+  `outputs/comparison_maxdepth.png`; the animated hydrograph and gauge can
+  be screen-recorded from https://blog.quantumautomata.in/the-dam/.
+- Caption every simulation shot with "simulation — order of magnitude
+  only" in small text; keep the disclaimer card ≥3 s.
