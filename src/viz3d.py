@@ -168,6 +168,10 @@ def render(scen_dir: Path, every=1, flysec=0, region=None, suffix="",
         "perumbavoor": (10.1077, 76.4750),
         "muvattupuzha": (9.9812, 76.5788),
         "thodupuzha": (9.8960, 76.7180),
+        "ramamangalam": (9.9310, 76.4880),
+        "piravom": (9.8703, 76.4934),
+        "thripunithura": (9.9447, 76.3466),
+        "ernakulam": (9.9816, 76.2999),
     })
     lp, ln = [], []
     for name, (lat, lon) in marks.items():
