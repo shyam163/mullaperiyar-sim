@@ -104,17 +104,36 @@ too. That's the assumption nobody mentions.
 
 ---
 
-## 2:55 – 3:45 · "MY MODEL IS TOO POLITE" — matching the famous study
+## 2:55 – 3:30 · FACT-CHECK — the district maps
+
+**VISUAL:** The cascade max-depth map (`outputs/cascade_142/max_depth.png`)
+with district outlines sketched over it. Highlight the thin flooded
+corridor inside the huge Ernakulam outline. Then pan far south to an
+empty Pathanamthitta outline; a ridge symbol between it and the Periyar.
+[worst case, both dams gone]
+
+**VO:**
+Which brings me to the maps from the panic years — the ones with entire
+districts erased. All of Ernakulam. Even Pathanamthitta. My worst case —
+both dams gone — puts one to three metres in Ernakulam's river corridor
+and backwaters. Genuinely dangerous. Not a district erased. And
+Pathanamthitta? It's in a different river basin. There is a mountain
+range in the way. The water would have to flow uphill. I can't simulate
+it flooding, because physics declined.
+
+---
+
+## 3:30 – 4:10 · "MY MODEL IS TOO POLITE" — matching the famous study
 
 **VISUAL:** Split screen: my arrival times vs published. Numbers in mono
 font. [them: Idukki in ~2 h · me: ~7 h]
 
 **VO:**
-Now the self-audit. The famous IIT Roorkee study gets the flood to Idukki
-in about two hours. Mine takes seven. Someone's wrong — so I checked who.
-It turns out their headline number rests on one input: the dam is assumed
-to disintegrate, completely, in twelve minutes. The historical regression
-says two and a half hours.
+Now the self-audit — because in the other direction, my model looks too
+slow. The famous IIT Roorkee study gets the flood to Idukki in about two
+hours. Mine takes seven. Their headline number rests on one input: the
+dam is assumed to disintegrate, completely, in twelve minutes. The
+historical regression says two and a half hours.
 
 **VISUAL:** The blog's animated hydrograph (screen-record it drawing):
 teal Froehlich curve, then the red 12-minute spike. [same water, angrier
@@ -127,40 +146,37 @@ than half. Most of the famous urgency isn't a finding. It's an input.
 
 ---
 
-## 3:45 – 4:25 · DIGGING A RIVER — the experiment that backfired
+## 4:10 – 4:40 · DIGGING A RIVER — the experiment that backfired
 
 **VISUAL:** Terminal montage of the carve runs; the arrival-profile table;
 a diagram of the trench undercutting the lake (simple animated sketch).
 [experiment: carve a 100 m channel]
 
 **VO:**
-The rest of the gap is my terrain — remember the trees? So I tried to fix
-it: I carved a synthetic hundred-metre channel along the river. First
-attempt dug the channel nine metres below the lake it was supposed to
-enter, and built a moat. The second was hydraulically flatter than the
-valley it replaced and made the flood slower. The only version that
-helped, helped by four percent. Lesson: you cannot origami your way out of
-bad terrain data. Someone should lidar that gorge. Until then, the truth
-sits between my seven hours and their two.
+The rest of the gap is my terrain — remember the trees? I tried carving a
+synthetic hundred-metre channel along the river. My first attempt built a
+moat. My second made the flood slower. The best version helped by four
+percent. You cannot origami your way out of bad terrain data — someone
+should lidar that gorge. Until then, the truth sits between my seven
+hours and their two.
 
 ---
 
-## 4:25 – 4:55 · THE INDEPENDENT JURY
+## 4:40 – 5:05 · THE INDEPENDENT JURY
 
 **VISUAL:** `outputs/comparison_maxdepth.png` — the three-panel
 mine-vs-LISFLOOD figure. Then a quick stat card:
 [two engines · same river · arrival within 5%]
 
 **VO:**
-Am I just marking my own homework? I re-ran everything through
-LISFLOOD-FP — the academic flood model used in hundreds of papers, built
-from source, completely different numerics. It agreed with me within five
-percent. Meanwhile the published studies of this dam disagree with each
-other by a factor of six. That spread — that's the dispute, in one number.
+Am I marking my own homework? I re-ran everything through LISFLOOD-FP —
+a completely independent academic flood model. It agreed with me within
+five percent. The published studies of this dam disagree with each other
+by a factor of six. That spread is the dispute, in one number.
 
 ---
 
-## 4:55 – 5:50 · CONCLUSION — the honest ledger
+## 5:05 – 5:50 · CONCLUSION — the honest ledger
 
 **VISUAL:** Three title cards over slow pans of the max-depth maps.
 
@@ -217,5 +233,10 @@ downhill.
   and `animation_3d.mp4`; maps in the same folders; LISFLOOD figure at
   `outputs/comparison_maxdepth.png`; the animated hydrograph and gauge can
   be screen-recorded from https://blog.quantumautomata.in/the-dam/.
+- Fact-check beat data (verified from sudden_152 max_depth.tif, worst
+  case): Ernakulam lowland corridor median 1.8 m, p95 3.1 m, max 4.6 m;
+  zero water south of ~9.95 N in the lowlands; Pathanamthitta is in the
+  Pamba basin, ~70 km south of the southernmost flooding, across the
+  watershed divide.
 - Caption every simulation shot with "simulation — order of magnitude
   only" in small text; keep the disclaimer card ≥3 s.
