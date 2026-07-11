@@ -153,16 +153,22 @@ def render(scen_dir: Path, every=1, flysec=0, region=None, suffix="",
         opacity=0.88, nan_opacity=0.0, show_edges=False, smooth_shading=True,
         show_scalar_bar=True,
         scalar_bar_args=dict(title="depth (m)", color="white",
-                             position_x=0.90, position_y=0.30,
+                             position_x=0.90, position_y=0.12,
                              width=0.035, height=0.40, n_labels=3,
                              fmt="%.0f", title_font_size=20,
                              label_font_size=16))
     pl.set_background("#1a1f2b")
 
-    # town labels
+    # town labels (gauged towns + extra context places, viz-only)
     marks = dict(terrain.TOWNS)
     marks["Mullaperiyar dam"] = terrain.DAM_MULLA
     marks["Idukki dams"] = terrain.DAM_CHERUTHONI
+    marks.update({
+        "kothamangalam": (10.0662, 76.6285),
+        "perumbavoor": (10.1077, 76.4750),
+        "muvattupuzha": (9.9812, 76.5788),
+        "thodupuzha": (9.8960, 76.7180),
+    })
     lp, ln = [], []
     for name, (lat, lon) in marks.items():
         if region is not None and not (region[0] <= lat <= region[1]
