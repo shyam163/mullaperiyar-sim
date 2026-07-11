@@ -36,7 +36,9 @@ WAYPOINTS = [
 ]
 
 
-def build_scene(dem_path, meta):
+def build_scene(dem_path, meta, region=None, downsample=DOWNSAMPLE):
+    """region = (lat0, lat1, lon0, lon1) crops the scene (and downsample
+    is typically 1 there, since the window is small)."""
     import contextlib
     import io
 
@@ -48,7 +50,19 @@ def build_scene(dem_path, meta):
     with rasterio.open(dem_path) as src:
         z = src.read(1).astype(np.float64)
         tr = src.transform
-    s = DOWNSAMPLE
+    s = downsample
+    crop = (0, z.shape[0], 0, z.shape[1])
+    if region is not None:
+        import rasterio as _rio
+        from rasterio.warp import transform as _wt
+        la0, la1, lo0, lo1 = region
+        xs_, ys_ = _wt("EPSG:4326", "EPSG:32643", [lo0, lo1], [la0, la1])
+        r1_, c0_ = _rio.transform.rowcol(tr, xs_[0], ys_[0])
+        r0_, c1_ = _rio.transform.rowcol(tr, xs_[1], ys_[1])
+        crop = (max(min(r0_, r1_), 0), min(max(r0_, r1_), z.shape[0]),
+                max(min(c0_, c1_), 0), min(max(c0_, c1_), z.shape[1]))
+        z = z[crop[0]:crop[1], crop[2]:crop[3]]
+        tr = tr * _rio.Affine.translation(crop[2], crop[0])
     z = z[::s, ::s]
     ny, nx = z.shape
     dx = tr.a * s
@@ -81,7 +95,7 @@ def build_scene(dem_path, meta):
     water_grid["depth"] = np.full(z.size, np.nan)
 
     return dict(z=z, dx=dx, s=s, dom=dom, terrain=terrain_grid,
-                water=water_grid, X=X, Y=Y)
+                water=water_grid, X=X, Y=Y, crop=crop)
 
 
 def ll_to_xy(dom, lat, lon):
@@ -99,7 +113,7 @@ def smooth_path(pts, n):
     return cs(np.linspace(0, 1, n))
 
 
-def render(scen_dir: Path, every=1, flysec=0):
+def render(scen_dir: Path, every=1, flysec=0, region=None, suffix=""):
     try:
         import pyvista as pv
     except ImportError:
@@ -108,7 +122,8 @@ def render(scen_dir: Path, every=1, flysec=0):
     scen_dir = Path(scen_dir)
     meta = json.load(open(scen_dir / "scenario_meta.json"))
     dem_path = ROOT / "data" / f"dem_utm{meta['res']}.tif"
-    sc = build_scene(dem_path, meta)
+    sc = build_scene(dem_path, meta, region=region,
+                     downsample=1 if region else DOWNSAMPLE)
     z, dom, s = sc["z"], sc["dom"], sc["s"]
 
     snaps = sorted((scen_dir / "snapshots").glob("h_*.npz"))[::every]
@@ -143,6 +158,9 @@ def render(scen_dir: Path, every=1, flysec=0):
     marks["Idukki dams"] = terrain.DAM_CHERUTHONI
     lp, ln = [], []
     for name, (lat, lon) in marks.items():
+        if region is not None and not (region[0] <= lat <= region[1]
+                                       and region[2] <= lon <= region[3]):
+            continue
         x, y = ll_to_xy(dom, lat, lon)
         r = np.clip(int((sc["Y"][0, 0] - y) / sc["dx"]), 0, z.shape[0] - 1)
         c = np.clip(int((x - sc["X"][0, 0]) / sc["dx"]), 0, z.shape[1] - 1)
@@ -197,12 +215,14 @@ def render(scen_dir: Path, every=1, flysec=0):
             np.pad(fly_clear, k, mode="edge"), box, "same")[k:-k])
 
     import imageio.v2 as imageio
-    out = scen_dir / "animation_3d.mp4"
+    out = scen_dir / f"animation_3d{suffix}.mp4"
     writer = imageio.get_writer(out, fps=FPS, codec="libx264", quality=7,
                                 macro_block_size=16)
 
+    r0_, r1_, c0_, c1_ = sc["crop"]
+
     def draw_frame(depth_cm, t_s):
-        depth = depth_cm.astype(np.float32)[::s, ::s] / 100.0
+        depth = depth_cm.astype(np.float32)[r0_:r1_, c0_:c1_][::s, ::s] / 100.0
         wsurf = np.where(depth >= MIN_DEPTH, (z + depth) * VEXAG + 2.0,
                          np.nan)
         pts = sc["water"].points.copy()
@@ -263,5 +283,10 @@ if __name__ == "__main__":
     ap.add_argument("--flysec", type=int, default=0,
                     help="optional fly-through duration in seconds of "
                          "video (0 = sea-side arc only)")
+    ap.add_argument("--region", default=None,
+                    help="lat0,lat1,lon0,lon1 crop, e.g. the gorge")
+    ap.add_argument("--suffix", default="",
+                    help="output filename suffix, e.g. _gorge")
     a = ap.parse_args()
-    render(a.scen_dir, a.every, a.flysec)
+    reg = tuple(float(v) for v in a.region.split(",")) if a.region else None
+    render(a.scen_dir, a.every, a.flysec, region=reg, suffix=a.suffix)
