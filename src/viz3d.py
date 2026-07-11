@@ -113,7 +113,9 @@ def smooth_path(pts, n):
     return cs(np.linspace(0, 1, n))
 
 
-def render(scen_dir: Path, every=1, flysec=0, region=None, suffix=""):
+def render(scen_dir: Path, every=1, flysec=0, region=None, suffix="",
+           arc=45.0, tstart=None, tend=None, fps=None, height=0.36,
+           base=180.0):
     try:
         import pyvista as pv
     except ImportError:
@@ -126,7 +128,12 @@ def render(scen_dir: Path, every=1, flysec=0, region=None, suffix=""):
                      downsample=1 if region else DOWNSAMPLE)
     z, dom, s = sc["z"], sc["dom"], sc["s"]
 
-    snaps = sorted((scen_dir / "snapshots").glob("h_*.npz"))[::every]
+    snaps = sorted((scen_dir / "snapshots").glob("h_*.npz"))
+    if tstart is not None or tend is not None:
+        i0 = int((tstart or 0.0) * 3600 / 300)
+        i1 = int((tend or 1e9) * 3600 / 300) + 1
+        snaps = snaps[i0:i1]
+    snaps = snaps[::every]
     n = len(snaps)
     vmax = 25.0 if meta["scenario"] != "baseline_142" else 15.0
 
@@ -178,9 +185,9 @@ def render(scen_dir: Path, every=1, flysec=0, region=None, suffix=""):
     ext = np.array([sc["X"].max() - sc["X"].min(),
                     sc["Y"].max() - sc["Y"].min()]).max()
     orbit_r = 0.62 * ext
-    orbit_h = center[2] + 0.36 * ext
-    ORBIT_ARC = np.radians(45.0)   # confined sweep, not a full circle
-    ORBIT_BASE = np.pi             # centered due WEST: view from the sea
+    orbit_h = center[2] + height * ext
+    ORBIT_ARC = np.radians(arc)    # confined sweep, not a full circle
+    ORBIT_BASE = np.radians(base)  # 180 = camera due WEST of center
 
     # optional fly-through pass (flysec=0 -> arc only, the default): the
     # camera is interpolated smoothly while snapshots advance underneath
@@ -216,7 +223,7 @@ def render(scen_dir: Path, every=1, flysec=0, region=None, suffix=""):
 
     import imageio.v2 as imageio
     out = scen_dir / f"animation_3d{suffix}.mp4"
-    writer = imageio.get_writer(out, fps=FPS, codec="libx264", quality=7,
+    writer = imageio.get_writer(out, fps=fps or FPS, codec="libx264", quality=7,
                                 macro_block_size=16)
 
     r0_, r1_, c0_, c1_ = sc["crop"]
@@ -287,6 +294,19 @@ if __name__ == "__main__":
                     help="lat0,lat1,lon0,lon1 crop, e.g. the gorge")
     ap.add_argument("--suffix", default="",
                     help="output filename suffix, e.g. _gorge")
+    ap.add_argument("--arc", type=float, default=45.0,
+                    help="camera arc sweep in degrees (small = near-static)")
+    ap.add_argument("--tstart", type=float, default=None,
+                    help="clip start, simulated hours")
+    ap.add_argument("--tend", type=float, default=None,
+                    help="clip end, simulated hours")
+    ap.add_argument("--fps", type=int, default=None)
+    ap.add_argument("--height", type=float, default=0.36,
+                    help="camera height factor (lower = more oblique)")
+    ap.add_argument("--base", type=float, default=180.0,
+                    help="camera azimuth degrees (180=west, 135=NW, 90=N)")
     a = ap.parse_args()
     reg = tuple(float(v) for v in a.region.split(",")) if a.region else None
-    render(a.scen_dir, a.every, a.flysec, region=reg, suffix=a.suffix)
+    render(a.scen_dir, a.every, a.flysec, region=reg, suffix=a.suffix,
+           arc=a.arc, tstart=a.tstart, tend=a.tend, fps=a.fps,
+           height=a.height, base=a.base)
