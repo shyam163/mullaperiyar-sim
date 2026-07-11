@@ -1,6 +1,6 @@
 # "I Flooded Kerala on My PC" — 6-minute video script
 
-Narration ≈ 900 words ≈ 6:00 at a relaxed 150 wpm. All visuals reference
+Narration ≈ 850 words ≈ 5:40 at a relaxed 150 wpm (headroom to 6:00). All visuals reference
 real files in the repo. VO = voiceover. Text on screen in [brackets].
 
 ---
@@ -27,7 +27,7 @@ the honest version of this story is stranger than the scary one.
 
 ---
 
-## 0:38 – 1:15 · THE SETUP — why I did this
+## 0:38 – 0:58 · THE SETUP — why I did this
 
 **VISUAL:** Old survey-map aesthetic (the blog's gauge graphic works —
 screen-record the page). Quick cuts: the dam (archival photo), a gauge with
@@ -39,20 +39,12 @@ made of lime-surkhi masonry, sits in Kerala, is operated by Tamil Nadu, on
 a lease signed in 1886 — for nine hundred and ninety-nine years. Kerala
 says it's a time bomb upstream of three and a half million people. Tamil
 Nadu says it's fine. The Supreme Court referees a fight over sixteen
-vertical feet of water level.
-
-**VISUAL:** Cut to a table with three glasses. [drinks with Hemant, Kiran
-and Amit]
-
-**VO:**
-What tipped me over was drinks with friends. Hemant was worried — the
-Kerala press was in full Kochi-underwater mode. I didn't think it was that
-serious. Everything traced back to one famous study, and the study looked
-thinner than its reputation. So — why not simulate it myself?
+vertical feet of water level. Everything the public knows traces back to
+one famous study — so I decided to run the physics myself.
 
 ---
 
-## 1:15 – 1:55 · THE BUILD — sixty seconds of method
+## 0:58 – 1:38 · THE BUILD — sixty seconds of method
 
 **VISUAL:** Fast montage: Copernicus tiles downloading (terminal), the
 hillshaded DEM (`outputs/*/max_depth.png` background layer), code scrolling
@@ -77,7 +69,7 @@ valley. Remember that — it matters at the end.
 
 ---
 
-## 1:55 – 2:55 · THE REALISTIC RUN — and the plot twist
+## 1:38 – 2:38 · THE REALISTIC RUN — and the plot twist
 
 **VISUAL:** `outputs/baseline_142/animation.mp4` (2D film) full screen.
 Pause at Vandiperiyar as the gorge fills; cut to the town gauge readout.
@@ -104,7 +96,7 @@ too. That's the assumption nobody mentions.
 
 ---
 
-## 2:55 – 3:30 · FACT-CHECK — the district maps
+## 2:38 – 3:13 · FACT-CHECK — the district maps
 
 **VISUAL:** The cascade max-depth map (`outputs/cascade_142/max_depth.png`)
 with district outlines sketched over it. Highlight the thin flooded
@@ -123,7 +115,7 @@ it flooding, because physics declined.
 
 ---
 
-## 3:30 – 4:10 · "MY MODEL IS TOO POLITE" — matching the famous study
+## 3:13 – 3:53 · "MY MODEL IS TOO POLITE" — matching the famous study
 
 **VISUAL:** Split screen: my arrival times vs published. Numbers in mono
 font. [them: Idukki in ~2 h · me: ~7 h]
@@ -146,7 +138,7 @@ than half. Most of the famous urgency isn't a finding. It's an input.
 
 ---
 
-## 4:10 – 4:40 · DIGGING A RIVER — the experiment that backfired
+## 3:53 – 4:23 · DIGGING A RIVER — the experiment that backfired
 
 **VISUAL:** Terminal montage of the carve runs; the arrival-profile table;
 a diagram of the trench undercutting the lake (simple animated sketch).
@@ -162,7 +154,7 @@ hours and their two.
 
 ---
 
-## 4:40 – 5:05 · THE INDEPENDENT JURY
+## 4:23 – 4:48 · THE INDEPENDENT JURY
 
 **VISUAL:** `outputs/comparison_maxdepth.png` — the three-panel
 mine-vs-LISFLOOD figure. Then a quick stat card:
@@ -176,7 +168,7 @@ by a factor of six. That spread is the dispute, in one number.
 
 ---
 
-## 5:05 – 5:50 · CONCLUSION — the honest ledger
+## 4:48 – 5:33 · CONCLUSION — the honest ledger
 
 **VISUAL:** Three title cards over slow pans of the max-depth maps.
 
@@ -210,7 +202,7 @@ dispute.
 
 ---
 
-## 5:50 – 6:00 · OUTRO
+## 5:33 – 5:43 · OUTRO
 
 **VISUAL:** The blog page scrolling slowly; the gauge fills. End card:
 [blog.quantumautomata.in · github.com/shyam163/mullaperiyar-sim ·
