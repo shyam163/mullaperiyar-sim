@@ -334,3 +334,48 @@ still rising at the 24 h cutoff); first-order scheme smears fronts;
 ~1–3 % of released volume exits a spurious Kulamavu-side path in early
 runs (eliminated by the solid blocks); results are order-of-magnitude,
 and none of this says anything about the probability of failure.
+
+## 16. Publication phase (2026-07-10 → 11)
+
+- **Blog post**: `blog.html` (v1, static images) and `blog_v2.html` (v2:
+  embedded 2D/3D films, self-drawing hydrograph SVG comparing Froehlich vs
+  the forced 12-min breach, "compressed clock" arrival timeline with
+  replay, scroll reveals, scroll-filling gauge rail marked 136/142/152 ft).
+  Voice: lightly absurdist first-person; drops the irony for Vandiperiyar
+  and the "Real:" ledger paragraph ("their safety should be the fixed
+  point of this argument, not a bargaining chip inside it"). Copy history:
+  laptop→PC; origin story is drinks with Hemant, Kiran, Amit (Hemant
+  worried, narrator skeptical, IIT study looked thin → "why not simulate
+  it myself"); "Now with moving water" removed from dek; "If Idukki
+  holds," lead-in removed; "rhetorical football" sentence removed;
+  baseline appendix (all baseline visuals) added at the bottom,
+  `<details ... open>` by default; data-URI gauge favicon.
+- **GitHub**: public repo `github.com/shyam163/mullaperiyar-sim` (full
+  history, ~250 MB incl. outputs). Push on every change.
+- **Live site**: https://blog.quantumautomata.in — structure: `/` = blog
+  index page (post cards, breadcrumb "QUANTUM AUTOMATA / blog");
+  `/the-dam/` = the article (breadcrumb "quantum automata / blog / The
+  Dam", right sidebar #postnav for future posts, media at
+  `/the-dam/outputs/`). Server: nginx on Ubuntu 22.04 (Oracle,
+  152.67.163.191, ~14 other vhosts — untouched), web root
+  `/var/www/blog.quantumautomata.in/`. DNS: Cloudflare A record `blog`
+  (proxied) added via browser agent. Zone SSL is Full (strict) → every
+  new subdomain needs `sudo certbot --nginx -d <sub>.quantumautomata.in`
+  (was the cause of an initial 526). Deploy bundle lives at
+  `/home/shyam/.claude/jobs/ba82049d/tmp/blogdeploy/site/` (regenerate if
+  gone; deployment = scp to /home/ubuntu + sudo mv + chown www-data).
+  Browser-verified: videos play, animations arm, mobile clean.
+- **Video script**: `docs/video_script.md` — ~5:40 narration, timecoded:
+  cold open = cascade 3D film ("the version everyone shows you") →
+  setup (no drinks anecdote; cut on request) → build → realistic run +
+  Idukki plot twist → district-maps fact-check → 12-min breach → carve
+  experiments → LISFLOOD jury → REAL/CONDITIONAL/INFLATED ledger → outro.
+- **District fact-check numbers** (verified from sudden_152 max_depth.tif,
+  worst case): Ernakulam lowland corridor median 1.8 m / p95 3.1 m / max
+  4.6 m over ~215 km²; zero lowland water south of ~9.95 N; Pathanamthitta
+  is in the Pamba basin across the watershed divide, ~70 km south of the
+  southernmost flooding — unfloodable from Mullaperiyar by construction.
+- **Gorge close-up film**: `viz3d.py --region lat0,lat1,lon0,lon1
+  --suffix _x` renders a cropped scene at full 90 m resolution (no
+  downsample). `outputs/baseline_142/animation_3d_gorge.mp4` uses region
+  9.37,9.99,76.73,77.30 (iterated twice per user to fit all of Idukki).
