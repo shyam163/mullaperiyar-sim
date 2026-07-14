@@ -166,8 +166,8 @@
 <p class="reveal">Words first, then the films. In every scenario the breach empties the reservoir down a gorge toward the town of Vandiperiyar, then north into the arms of the Idukki reservoir. What happens next depends entirely on whether you believe Idukki holds.</p>
 
 <figure class="reveal">
-  <video controls muted loop playsinline preload="metadata" poster="outputs/cascade_142/max_depth.png" src="outputs/cascade_142/animation.mp4"></video>
-  <figcaption>cascade_142 · 24 simulated hours in 16 seconds · hillshade + water depth, 90 m grid. watch the breach fill the gorge, hit idukki (the tinted lake), and — because this scenario assumes idukki fails — continue northwest past neriamangalam and unfold across the coastal plain toward kochi.</figcaption>
+  <video controls playsinline preload="metadata" poster="outputs/cascade_142/poster_cut.jpg" src="outputs/cascade_142/cascade_cut.mp4"></video>
+  <figcaption>cascade_142 · the 3d cut · hillshade + water depth, 90 m grid. watch the breach fill the gorge, hit idukki, and — because this scenario assumes idukki fails — continue past neriamangalam into the lowlands: kalady, cochin airport, muvattupuzha.</figcaption>
 </figure>
 
 <div class="clock reveal" id="clock1" aria-label="Animated timeline of flood arrival times in the cascade scenario">
@@ -266,8 +266,8 @@
 <p class="reveal"><strong>My Idukki is a cartoon.</strong> A nominal pool level, spillway assumed closed, dams as solid rectangles, failure triggered by a volume threshold I chose. The real reservoir has operators, gates, rule curves, and a monsoon calendar — all of which matter more than anything in my ledger.</p>
 <p class="reveal"><strong>Assorted sins:</strong> no buildings, no bridges, no embankments, no sediment (real dam-break floods are debris slurries, which travel differently), no tides in the backwaters, towns reduced to their lowest-lying 90-m cell, and the cascade's coastal peak was still rising when my 24-hour clock ran out.</p>
 
-<h2 class="reveal">The independent jury</h2>
-<p class="reveal">Because a man who marks his own homework is just a man with two opinions, I ran the same terrain and the same hydrograph through <strong>LISFLOOD-FP</strong> — the University of Bristol/Sheffield flood model used in a few hundred papers, built from source, with an entirely different numerical heart (local-inertial vs my full shallow-water). It agreed with me to within 5% on arrival and 8% on peak depth at the key gauge, and traced the same flood footprint with an IoU of 0.72 across the whole 180-km cascade path.</p>
+<h2 class="reveal">Cross Examination</h2>
+<p class="reveal">I had to cross check I absolutely had to , I ran the same terrain and the same hydrograph through <strong>LISFLOOD-FP</strong> — the University of Bristol/Sheffield flood model used in a few hundred papers, built from source, with an entirely different numerical heart (local-inertial vs my full shallow-water). It agreed with me to within 5% on arrival and 8% on peak depth at the key gauge, and traced the same flood footprint with an IoU of 0.72 across the whole 180-km cascade path.</p>
 <figure class="reveal">
   <img src="outputs/comparison_maxdepth.png" alt="Side-by-side maximum depth maps from our solver and LISFLOOD-FP, plus a difference map">
   <figcaption>baseline · left: my solver · middle: LISFLOOD-FP · right: difference. two independently written engines, one river.</figcaption>
