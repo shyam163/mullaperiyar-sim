@@ -1,5 +1,7 @@
 # Mullaperiyar dam-break flood simulation
 
+**Read the full story:** [The Dam, the Dispute, and Me](https://blog.quantumautomata.in/mullaperiyar/) — the simulation diary, with films.
+
 A 2D shallow-water dam-break simulation of the Mullaperiyar Dam (Idukki
 district, Kerala) over real Copernicus GLO-30 terrain, built for
 **visualization and intuition only**. It is not an engineering study, it
