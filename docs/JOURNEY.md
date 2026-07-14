@@ -354,9 +354,9 @@ and none of this says anything about the probability of failure.
   history, ~250 MB incl. outputs). Push on every change.
 - **Live site**: https://blog.quantumautomata.in — structure: `/` = blog
   index page (post cards, breadcrumb "QUANTUM AUTOMATA / blog");
-  `/the-dam/` = the article (breadcrumb "quantum automata / blog / The
+  `/mullaperiyar/` = the article (old `/the-dam/` 301-redirects here) (breadcrumb "quantum automata / blog / The
   Dam", right sidebar #postnav for future posts, media at
-  `/the-dam/outputs/`). Server: nginx on Ubuntu 22.04 (Oracle,
+  `/mullaperiyar/outputs/`). Server: nginx on Ubuntu 22.04 (Oracle,
   152.67.163.191, ~14 other vhosts — untouched), web root
   `/var/www/blog.quantumautomata.in/`. DNS: Cloudflare A record `blog`
   (proxied) added via browser agent. Zone SSL is Full (strict) → every

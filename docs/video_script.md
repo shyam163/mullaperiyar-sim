@@ -224,7 +224,7 @@ downhill.
 - All sim footage exists: `outputs/{cascade_142,baseline_142}/animation.mp4`
   and `animation_3d.mp4`; maps in the same folders; LISFLOOD figure at
   `outputs/comparison_maxdepth.png`; the animated hydrograph and gauge can
-  be screen-recorded from https://blog.quantumautomata.in/the-dam/.
+  be screen-recorded from https://blog.quantumautomata.in/mullaperiyar/.
 - Fact-check beat data (verified from sudden_152 max_depth.tif, worst
   case): Ernakulam lowland corridor median 1.8 m, p95 3.1 m, max 4.6 m;
   zero water south of ~9.95 N in the lowlands; Pathanamthitta is in the

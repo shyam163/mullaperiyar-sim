@@ -41,9 +41,9 @@ comparison tables. `docs/PLAN.md` = original design. `docs/video_script.md`
 ## Publication surfaces (keep in sync when editing the post)
 
 Three copies of the article: `blog_v2.html` (repo), the deploy bundle at
-`/home/shyam/.claude/jobs/ba82049d/tmp/blogdeploy/site/the-dam/index.html`
+`/home/shyam/.claude/jobs/ba82049d/tmp/blogdeploy/site/mullaperiyar/index.html`
 (recreate from blog_v2 + chrome if gone), and LIVE at
-https://blog.quantumautomata.in/the-dam/ (`blog.html` is the frozen v1).
+https://blog.quantumautomata.in/mullaperiyar/ (`blog.html` is the frozen v1).
 Deploy = scp to ubuntu@152.67.163.191 (key
 `/home/shyam/Documents/keys/ssh-key-2025-04-13.key`) then sudo mv into
 `/var/www/blog.quantumautomata.in/` + chown www-data. ~14 other vhosts on
